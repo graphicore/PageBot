@@ -39,9 +39,9 @@ rs.ph = 11 * 72 # Page height 11", international generic fit.
 rs.ml = 7*U # Margin left
 rs.mt = 7*U # Margin top
 rs.baselineGrid = 2*U
-rs.cw = 11*U # Column width. 
 rs.g = U # Generic gutter.
-rs.ch = rs.baselineGrid - rs.g # Approx. square. Fit with baseline.
+rs.cw = 11*U # Column width. 
+rs.ch = 6*rs.baselineGrid - rs.g # Approx. square. Fit with baseline.
 rs.listTabs = [(U*0.8, 'left')] # Default indent for bullet lists
 # Display option
 rs.gridStroke = 0.8
@@ -136,6 +136,7 @@ def makeDocument():
     doc.newStyle(name='li', fontSize=rs.fontSize, font=BOOK, 
         tracking=P_TRACK, leading=rs.leading, rLeading=rs.rLeading,
         hyphenation=True, indent=rs.listIndent, firstLineIndent=1, 
+        tabs=rs.listTabs,
         #tailIndent=U, 
         stripWhiteSpace=' ')
     doc.newStyle(name='ul', stripWhiteSpace=' ',)
