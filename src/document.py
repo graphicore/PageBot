@@ -17,10 +17,6 @@ import re
 
 from drawBot import *
 
-FIRSTPAGE = 1
-NO_COLOR = -1
-
-
 def setFillColor(c, fs=None, cmyk=False):
     u"""Set the color for global or the color of the formatted string."""
     if c is NO_COLOR:
@@ -80,7 +76,33 @@ def setStrokeColor(c, w=1, fs=None, cmyk=False):
         raise ValueError('Error in color format "%s"' % c)
     if w is not None:
         strokeWidth(w)
-          
+
+def getMarker(markerId, args=None):
+    u"""Answer a formatted string with markerId that can be used as non-display marker. 
+    This way the Composer can find the position of markers in text boxes, after
+    FS-slicing has been done. Note there is always a very small "white-space"
+    added to the string, so there is a potential difference in width that matters.
+    For that reason markers should not be changed after slizing (which would theoretically
+    alter the flow of the FormattedString in an box) and the markerId and amount/length 
+    of args should be kept as small as possible.
+    Note that there is a potential problem of slicing through the argument string at 
+    the end of a textBox. That is another reason to keep the length of the arguments short.
+    And not to use any spaces, etc. inside the markerId.
+    Possible slicing through line-endings is not a problem, as the raw string ignores them."""
+    marker = '==%s--%s==' % (markerId, args or '') 
+    return FormattedString(marker, fill=None, stroke=None, fontSize=0.0000000000001)  
+
+FIND_FS_MARKERS = re.compile('\=\=([a-zA-Z0-9_]*)\-\-([^=]*)\=\=')
+
+def findMarkers(fs):
+    u"""Answer a dictionary of markers with their arguments that exist in a given FormattedString."""
+    markers = {}
+    for markerId, args in FIND_FS_MARKERS.findall(`fs`):
+        if not markerId in markers:
+            markers[markerId] = []
+        markers[markerId].append(args)
+    return markers
+              
 def getFormattedString(t, style=None):
     u"""Answer a formatted string from valid attributes in Style. Set the all values after testing,
     so they can inherit from previous style formats."""
@@ -127,7 +149,21 @@ def getFormattedString(t, style=None):
         #fs.hyphenation(style.hyphenation)        
     fs.append(t)
     return fs
+
+def cp2p(cx, cy, style):
+    u"""Convert columns point to style position."""
+    assert style is not None
+    return (style.ml + cx * (style.cw + style.g),  
+            style.mt + cy * (style.ch + style.g))
     
+def cr2p(cx, cy, cw, ch, style):
+    u"""Convert columns rect to style position/size."""
+    assert style is not None
+    return (style.ml + cx * (style.cw + style.g),  
+            style.h - style.mt - (cy + ch) * (style.ch + style.g) + style.g, 
+            cw * (style.cw + style.g) - style.g, 
+            ch * (style.ch + style.g) - style.g)
+
 class Style(object):
     u"""Container for style instances."""
         
@@ -152,42 +188,179 @@ class Style(object):
         if hasattr(self, name):
             return getattr(self, name)
         return default
-        
+
+# Basic layout measures 
+U = 7
+PW = 595 # Page width 210mm, international generic fit.
+PH = 11 * 72 # Page height 11", international generic fit.
+ML = 7*U # Margin left
+MT = 7*U # Margin top
+MR = MB = 0 # Calculated as result of ml/mt and cw/ch
+BASELINE_GRID = 2*U
+CW = 11*U # Column width. 
+G = U # Generic gutter.
+CH = 6*BASELINE_GRID - G # Approx. square. Fit with baseline.
+LIST_INDENT = U*0.8 # Indent for bullet lists
+# Display option
+SHOW_GRID = True
+SHOW_BASELINEGRID = True
+GRID_FILL = (0.8, 0.9, 1)
+GRID_STROKE = (0.8, 0.8, 0.9)
+GRID_STROKEWIDTH = 1
+# Text measures
+LEADING = BASELINE_GRID
+RLEADING = 0
+FONTSIZE = 10
+FONT = 'Georgia'
+FALLBACK_FONT = 'LucidaGrande'
+OPENTYPE_FEATURES = None
+LEFT_ALIGN = 'left'
+RIGHT_ALIGN = 'right'
+CENTER = 'center'
+JUSTIFIED = 'justified'
+ # Tracking presets
+H1_TRACK = H2_TRACK = 0.015
+H3_TRACK = 0.030 # Tracking as relative factor to font size.
+P_TRACK = 0.030
+# Language settings
+LANGUAGE = 'en'
+PAGENUMBER_MARKER = '#?#'
+FIRSTPAGE = 1
+NO_COLOR= -1
+MISSING_IMAGE_FILL = 0.5
+ 
+def getRootStyle():
+    return Style(
+        name = 'root',
+        u = U,
+        w = PW,
+        h = PH, # Size of the document..
+        ml = ML, mt = MT, mr = MR, mb = MB, # Margins 
+        cw = CW, ch = CH , # Column width for column2point calculations.
+        g = G, # Gutter
+        # Grid
+        showGrid = SHOW_GRID,
+        gridFill = GRID_FILL,
+        gridStroke = GRID_STROKE, # Stroke of grid lines in part of a template.
+        gridStrokeWidth = GRID_STROKEWIDTH,
+        missingImageFill = MISSING_IMAGE_FILL,
+        baselineGrid = BASELINE_GRID,
+        baselineGridStroke = GRID_STROKEWIDTH,
+        gridfit = False,
+        # Typographic defaults
+        font = FONT, # Default is to avoid existing font and fontSize in the graphic state.
+        fallbackFont = FALLBACK_FONT,
+        fontSize = FONTSIZE, # Font size in points
+        tracking = 0, # Tracking of the current font/fontSize
+        align = LEFT_ALIGN, # Alignment, one if ('left', 'justified', 'right')
+        # Set tabs,tuples of (float, alignment) Aligment can be “left”, “center”, “right” 
+        # or any other character. If a character is provided the alignment will be right and 
+        # centered on the specified character.
+        listTabs = [(LIST_INDENT, LEFT_ALIGN)], # Default indent for bullet lists
+        listIndent = LIST_INDENT,
+        tabs = None, 
+        firstLineIndent = None, # Indent of first paragraph in a text tag
+        rFirstLineIndent = None, # First line indent as factor if font size.
+        indent = None,
+        rIndent = None, # indent as factor of font size.
+        tailIndent = None,
+        rTailIndent = None, # tailIndent as factor of font size
+
+        # List of supported OpenType features. 
+        # c2pc, c2sc, calt, case, cpsp, cswh, dlig, frac, liga, lnum, onum, ordn, pnum, rlig, sinf, 
+        # smcp, ss01, ss02, ss03, ss04, ss05, ss06, ss07, ss08, ss09, ss10, ss11, ss12, ss13, ss14, 
+        # ss15, ss16, ss17, ss18, ss19, ss20, subs, sups, swsh, titl, tnum
+        openTypeFeatures = OPENTYPE_FEATURES, 
+
+        leading = LEADING, # Relative factor to fontSize.
+        rLeading = RLEADING, # Relative factor to fontSize.
+        paragraphTopSpacing = None,
+        rParagraphTopSpacing = None,
+        paragraphBottomSpacing = None,
+        rParagraphBottomSpacing = None,
+        baselineGridfit = False,
+        firstLineGridfit = True,
+        baselineShift = None, # Absolute baseline shift in points. Positive value is upward.
+        rBaselineShift = None, # Relative baseline shift, multiplyer to current self.fontSize 
+        needsAbove = 0, # Check if this space is available above, to get amount of text lines above headings.
+        needsBelow = 0, # Check if this space is available below, to get amount of text lines below headings.
+        language = LANGUAGE,
+        hyphenation = True,
+        stripWhiteSpace = ' ', # Strip pre/post white space from e.text and e.tail and add single space
+        pageNumberMarker = PAGENUMBER_MARKER,
+        # Color
+        noColor = NO_COLOR,
+        fill = 0, # Default is black
+        stroke = None, # Default is to have no stroke.
+        cmykFill = NO_COLOR, # Flag to ignore, None is valid value for color.
+        cmykStroke = NO_COLOR, # Flag to ignore, None is valid value for color.
+        strokeWidth = None, # Stroke thickness
+
+    )
+          
 class Element(object):
     
     def __repr__(self):
         return '[%s %s]' % (self.__class__.__name__, self.eId)
 
-    def getHeight(self):
-        u"""Answer the height of the element. This method can be redefined,
-        by inheriting classes, who need to calculate the height."""
-        return self.h
+    def getSize(self):
+        u"""Answer the size of the element. This method can be redefined,
+        by inheriting classes, who need to calculate the height,such as galleys."""
+        return self.w, self.h
+
+    def getWidth(self):
+        return self.w
         
+    def getHeight(self):
+        return self.h
+             
 class Galley(Element):
     u"""A Galley is sticky sequential flow of elements, where the parts can have 
     different widths (like headlines, images and tables) or responsive width, such as images 
-    and formatted text volumes."""
+    and formatted text volumes. Size is calculated dynamically, since one of the enclosed
+    elements may change width/height at any time during the composition process.
+    Also the sequence may change by slicing, adding or removing elements by the Composer.
+    Since the Galley is a full compatible Element, it can contain other galley instances
+    recursively."""
     def __init__(self, elements=None):
         if elements is None:
-            elements = {} # Key is vertical position. Elements are supposed to know their real height.
+            elements = [] # Key is vertical position. Elements are supposed to know their real height.
         self.elements = elements
     
-    def add(self, element):
-        y = max(self.elements.keys())
-        lastElement = self.elements[y]
-        self.elements[y + lastElement.getHeight()] = element
+    def getSize(self):
+        u"""Answer the enclosing rectangle of all elements in the galley."""
+        w = h = 0
+        for e in self.elements:
+            ew, eh = e.getSize()
+            w = max(w, ew)
+            h += EH
+        return w, h
+
+    def getWidth(self):
+        return self.getSize()[0]
         
-    def draw(self, page):
-        for y, element in sorted(self.elements.items()):
+    def getHeight(self):
+        return self.getSize()[1]
+                
+    def append(self, element):
+        u"""Just add to the sequence. Total size will be calculated dynamically."""
+        self.elements.append(element)
+        
+    def draw(self, page, x, y):
+        u"""Like "roled pasteboard" galleys can draw themselves, if the Composer decides to keep
+        them in tact, instead of select, pick & choose elements, until the are all
+        part of a page. In that case the w/h must have been set by the Composer to fit the 
+        containing page."""
+        gy = y
+        for element in sorted(self.elements.items()):
             # @@@ Find space and do more composition
-            page = element.draw(page)
+            element.draw(page, x, gy)
+            gy += element.getHeight()
             
 class TextBox(Element):
-    def __init__(self, fs, x, y, w, h, eId=None, nextBox=None, nextPage=1, fill=NO_COLOR, stroke=NO_COLOR, 
+    def __init__(self, fs, w, h, eId=None, nextBox=None, nextPage=1, fill=NO_COLOR, stroke=NO_COLOR, 
             strokeWidth=None ):
         self.fs = fs
-        self.x = x
-        self.y = y
         self.w = w
         self.h = h
         self.eId = eId
@@ -206,52 +379,31 @@ class TextBox(Element):
         self.fs = fs
         # Run simulation of text, to see what overflow there is.
         # TODO: Needs to be replaced by textOverflow() as soon as it is available
-        return textBox(fs, (self.x+10000, self.y, self.w, self.h))
+        return textBox(fs, (10000, 0, self.w, self.h))
         
-    def _draw(self, page, x, y, w, h):
+    def draw(self, page, x, y):
         if self.fill != NO_COLOR:
             setFillColor(self.fill)
             stroke(None)
-            rect(x, y, w, h)
+            rect(x, y, self.w, self.h)
         hyphenation(True)
-        textBox(self.fs, (x, y, w, h))
+        textBox(self.fs, (x, y, self.w, self.h))
         if self.stroke != NO_COLOR and self.strokeWidth:
             setStrokeColor(self.stroke, self.strokeWidth)
             fill(None)
-            rect(x, y, w, h)
+            rect(x, y, self.w, self.h)
      
-    def draw(self, page):
-        self._draw(page, self.x, self.y, self.w, self.h)
-        
-class CTextBox(TextBox):
-
-    def getTextSize(self, page, fs):
-        """Figure out what the height of the text is, with the width of this text box."""
-        _, _, pw, _ = page.cr2p(0, 0, self.w, 0)
-        return textSize(fs, width=pw)
-        
-    def typeset(self, page, fs):
-        self.fs = fs
-        # Run simulation of text, to see what overflow there is.
-        # TODO: Needs to be replaced by textOverflow() as soon as it is available
-        px, py, pw, ph = page.cr2p(self.x, self.y, self.w, self.h)
-        return textBox(fs, (px+10000, py, pw, ph))
-        
-    def draw(self, page):
-        px, py, pw, ph = page.cr2p(self.x, self.y, self.w, self.h)
-        self._draw(page, px, py, pw, ph)
-                  
 class Text(Element):
-    def __init__(self, fs, x, y, eId=None, font=None, fontSize=None, fill=NO_COLOR):
+    def __init__(self, fs, eId=None, font=None, fontSize=None, fill=NO_COLOR):
         self.fs = fs
-        self.x = x
-        self.y = y
         self.font = font
         self.fontSize = fontSize
         self.fill = fill
         self.eId = eId # Unique element id.
     
-    def _draw(self, page, x, y):
+    def draw(self, page, x, y):
+        u"""Draw the formatted text. Since this is not a text column, but just a 
+        typeset text line, background and stroke of a text column needs to be drawn elsewere."""
         setFillColor(self.fill)
         if self.font is not None:
             font(self.font)
@@ -260,25 +412,11 @@ class Text(Element):
         # TODO: replace by a more generic replacer. How to do that with FormattedStrings?
         s = ('%s' % self.fs).replace('#?#', `page.pageNumber+1`)
         text(s, (x, y))
-            
-    def draw(self, page):
-        u"""Draw the formatted text. Since this is not a text column, but just a 
-        typeset text line, background and stroke of a text column needs to be drawn elsewere."""
-        self._draw(page, self.x, self.y)
-        
-class CText(Text):
-    def draw(self, page):
-        u"""Draw the formatted text. Since this is not a text column, but just a 
-        typeset text line, background and stroke of a text column needs to be drawn elsewere."""
-        px, py = page.cp2p(self.x, self.y)
-        self._draw(page, px, py)
-                         
+                                             
 class Rect(Element):
-    def __init__(self, x, y, w, h, eId=None, fill=0, stroke=None, strokeWidth=None):
+    def __init__(self, w, h, eId=None, fill=0, stroke=None, strokeWidth=None):
     # TODO: Add all parameters as arguments **kwargs and make compatible with Style
     #def __init__(self, x, y, w, h, eId=None, **kwargs):
-        self.x = x
-        self.y = y
         self.w = w
         self.h = h
         self.eId = eId # Unique element id.
@@ -286,22 +424,13 @@ class Rect(Element):
         self.stroke = stroke
         self.strokeWidth = strokeWidth
         
-    def draw(self, page):
+    def draw(self, page, x, y):
         setFillColor(self.fill)
         setStrokeColor(self.stroke, self.strokeWidth)
-        rect(self.x, page.h - self.y - self.h, self.w, self.h)
-
-class CRect(Rect):
-    def draw(self, page):
-        px, py, pw, ph = page.cr2p(self.x, self.y, self.w, self.h)
-        setFillColor(self.fill)
-        setStrokeColor(self.stroke, self.strokeWidth)
-        rect(px, py, pw, ph)
+        rect(x, page.h - y - self.h, self.w, self.h)
 
 class Oval(Element):
-    def __init__(self, x, y, w, h, eId=None, fill=0, stroke=None, strokeWidth=None):
-        self.x = x
-        self.y = y
+    def __init__(self, w, h, eId=None, fill=0, stroke=None, strokeWidth=None):
         self.w = w
         self.h = h
         self.eId = eId # Unique element id
@@ -309,32 +438,28 @@ class Oval(Element):
         self.stroke = stroke
         self.strokeWidth = strokeWidth
         
-    def draw(self, page):
+    def draw(self, page, x, y):
         setFillColor(self.fill)
         setStrokeColor(self.stroke, self.strokeWidth)
-        oval(self.x, self.y, self.w, self.h)
+        oval(x, y, self.w, self.h)
               
 class Line(Element):
-    def __init__(self, x, y, w, h, eId=None, stroke=None, strokeWidth=None):
-        self.x = x
-        self.y = y
+    def __init__(self, w, h, eId=None, stroke=None, strokeWidth=None):
         self.w = w
         self.h = h
         self.eId = eId # Unique element id
         self.stroke = stroke
         self.strokeWidth = strokeWidth
         
-    def draw(self, page):
+    def draw(self, page, x, y):
         setStrokeColor(self.stroke, self.strokeWidth)
         newPath()
-        moveTo((self.x, self.y))
-        lineTo((self.x + self.w, self.y + self.h))
+        moveTo((x, y))
+        lineTo((x + self.w, y + self.h))
         drawPath()
         
 class Image(Element):
-    def __init__(self, path, x, y, w=None, h=None, eId=None, s=None, sx=None, sy=None, fill=None, stroke=None, strokeWidth=None, missingImageFill=NO_COLOR, caption=None, hyphenation=True):
-        self.x = x
-        self.y = y
+    def __init__(self, path, w=None, h=None, eId=None, s=None, sx=None, sy=None, fill=None, stroke=None, strokeWidth=None, missingImageFill=NO_COLOR, caption=None, hyphenation=True):
         self.w = w # Target width
         self.h = h # Target height, whichever fits best to original proportions.
         self.setPath(path) # If omitted, a gray/crossed rectangle will be drawn.
@@ -374,7 +499,7 @@ class Image(Element):
             self.sx = self.sy = 1.0 * w / self.iw
         else:
             self.sx = self.sy = 1.0 * h / self.ih
-
+            
     def getCaptionSize(self, page):
         """Figure out what the height of the text is, with the width of this text box."""
         return textSize(self.caption or '', width=self.w)
@@ -411,59 +536,38 @@ class Image(Element):
     def _drawCaption(self, page, x, y, w, h):
         if self.caption:
             captionW, captionH = self.getCaptionSize(page)
-            fill(0.8, 0.8, 0.8, 0.5)
-            rect(x, y, w, captionH)
+            #fill(0.8, 0.8, 0.8, 0.5)
+            #rect(x, y, w, captionH)
             hyphenation(self.hyphenation)
             textBox(self.caption, (x, y, w, captionH))
           
-    def draw(self, page):
+    def draw(self, page, x, y):
         if self.path is None:
-            self._drawMissingImage(self.x, self.y, self.w, self.h)
+            self._drawMissingImage(x, y, self.w, self.h)
         else:
             save()
             scale(self.sx, self.sy)
-            image(self.path, (self.x/self.sx, self.y/self.sy), self._getAlpha())
+            image(self.path, (x/self.sx, y/self.sy), self._getAlpha())
             if self.stroke is not None: # In case drawing border.
                 fill(None)
                 setStrokeColor(self.stroke, self.strokeWidth * self.sx)
-                rect(self.x/self.sx, self.y/self.sy, self.w/self.sx, self.h/self.sy)
+                rect(x/self.sx, y/self.sy, self.w/self.sx, self.h/self.sy)
             restore()
-        self._drawCaption(page, self.x, page.h - self.y, self.w, self.h)
-        
-class CImage(Image):
-    def getCaptionSize(self, page):
-        """Figure out what the height of the text is, with the width of this text box."""
-        _, _, pw, _ = page.cr2p(0, 0, self.w, 0)
-        return textSize(self.caption or '', width=pw)
-                
-    def draw(self, page):
-        px, py, pw, ph = page.cr2p(self.x, self.y, self.w, self.h)
-        self.setScale(pw, ph) # Calculate again with pixel sizes.
-        if self.path is None:
-            self._drawMissingImage(px, py, pw, ph)
-        else:
-            save()
-            scale(self.sx, self.sy)
-            image(self.path, (px/self.sx, py/self.sy), self._getAlpha())
-            if self.stroke is not None: # In case drawing border.
-                fill(None)
-                setStrokeColor(self.stroke, self.strokeWidth * self.sx)
-                rect(px/self.sx, py/self.sy, pw/self.sx, ph/self.sy)
-            restore()
-        self._drawCaption(page, px, py, pw, ph)
-    
+        self._drawCaption(page, x, page.h - y, self.w, self.h)
+            
 class Grid(Element):
     def __init__(self, eId='grid'):
         self.eId = eId # Unique element id
 
-    def draw(self, page):
-        u"""Draw grid of lines and/or rectangles if colors are set in the style."""
+    def draw(self, page, px, py):
+        u"""Draw grid of lines and/or rectangles if colors are set in the style.
+        Normally px and py will be 0, but it's possible to give them a fixed offset."""
         style = page.parent.getRootStyle()
         # Drawing the grid as squares.
         if style.gridFill is not NO_COLOR:
             setFillColor(style.gridFill)
             setStrokeColor(None)
-            x = style.ml
+            x = px + style.ml
             while x < style.w - style.mr - style.cw:
                 y = style.h - style.mt - style.ch - style.g
                 while y >= 0:
@@ -479,9 +583,9 @@ class Grid(Element):
             fs = FormattedString('', font='Verdana', align='right', fontSize=M/2,     
                 stroke=None, fill=(style.gridStroke, style.gridStroke, 
                 style.gridStroke))
-            x = style.ml
+            x = px + style.ml
             index = 0
-            y = style.h - style.mt
+            y = style.h - style.mt - py
             while x < style.w - style.mr:
                 newPath()
                 moveTo((x, 0))
@@ -508,11 +612,12 @@ class BaselineGrid(Element):
     def __init__(self, eId='grid'):
         self.eId = eId # Unique element id
 
-    def draw(self, page):
+    def draw(self, page, px, py):
         u"""Draw baseline grid if line color is set in the style.
-        TODO: Make fixed values part of calculation or part of grid style."""
+        TODO: Make fixed values part of calculation or part of grid style.
+        Normally px and py will be 0, but it's possible to give them a fixed offset."""
         style = page.parent.getRootStyle()
-        y = style.h - style.mt
+        y = style.h - style.mt - py
         line = 0
         M = 16
         # Format of line numbers.
@@ -549,28 +654,24 @@ class Page(object):
         u"""Clear the elements from the page and set the template. Copy the elements."""
         self.elements = [] # Sequential drawing order of Element instances.
         self.elementIds = {} # Stored elements by their unique id, so they can be altered later, before rendering starts.
+        self.placed = {} # Placement by (x,y) key. Value is a list of elements.
         self.template = template # Keep in order to clone pages or if addition info is needed.
         if template is not None:
             # Copy elements from the template
-            for element in template.elements:
-                self.append(copy.copy(element))
+            for element, (x, y) in template.elements:
+                self.place(copy.copy(element), x, y)
             
-    def cp2p(self, cx, cy):
-        u"""Convert columns point to page position."""
-        style = self.parent.getRootStyle()
-        return (style.ml + cx * (style.cw + style.g),  
-                style.mt + cy * (style.ch + style.g))
-        
-    def cr2p(self, cx, cy, cw, ch):
-        u"""Convert columns rect to page position/size."""
-        style = self.parent.getRootStyle()
-        return (style.ml + cx * (style.cw + style.g),  
-                style.h - style.mt - (cy + ch) * (style.ch + style.g) + style.g, 
-                cw * (style.cw + style.g) - style.g, 
-                ch * (style.ch + style.g) - style.g)
-  
-    def append(self, e):
-        self.elements.append(e)
+    def place(self, e, x, y):
+        u"""Place the elememt on position (x, y). Note that the elements do not know that they
+        have a position by themselves. This also allows to place the same element on multiple
+        position on the same page or multiple pages (as for template elements)."""
+        # Store the element by position. There can be multiple elements on the same position.
+        if not (x,y) in self.placed:
+            self.placed[(x,y)] = []
+        self.placed[(x,y)].append(e)
+        # Store the elements for sequential drawing with their (x,y) for easy sequential drawing.
+        self.elements.append((e, (x, y))) 
+        # If the element has an eId, then store by id, for direct retrieval, e.g. for the Composer
         if e.eId is not None:
             assert e.eId not in self.elementIds
             self.elementIds[e.eId] = e
@@ -582,7 +683,7 @@ class Page(object):
     def findImageElement(self, w, h):
         u"""Find unused image space that closest fits the requested w/h/ratio."""
         for element in self.elements:
-            if isinstance(element, (Image, CImage)) and not element.path:
+            if isinstance(element, Image) and not element.path:
                 return element
         return None
                              
@@ -604,45 +705,53 @@ class Page(object):
         return page, page.findElement(tb.nextBox)
         
     def getStyle(self, name=None):
-        return self.parent.styles.get(name or self.DEFAULT_STYLE)
-    
+        style = None
+        if name is None and self.template is not None:
+            style = self.template.getStyle()
+        if style is None: # Not found, then search in document. 
+            style = self.parent.getStyle(name)
+        if style is None: # Not found, then answer current style
+            style = self.parent.getStyle(self.DEFAULT_STYLE)
+        if style is None:
+            style = self.parent.getRootStyle()
+        return style
+        
     def getStyles(self):
         return self.parent.styles
 
     def textBox(self, fs, x, y, w, h, eId=None, nextBox=None, nextPage=1, 
             fill=NO_COLOR, stroke=NO_COLOR, strokeWidth=None):
-        e = TextBox(fs, x, y, w, h, eId, nextBox, nextPage, fill, stroke, strokeWidth)
-        self.append(e)
+        e = TextBox(fs, w, h, eId, nextBox, nextPage, fill, stroke, strokeWidth)
+        self.place(e, x, y) # Append to drawing sequence and store by (x,y) and optional element id.
         return e
 
     def cTextBox(self, fs, cx, cy, cw, ch, eId=None, nextBox=None, nextPage=1, 
             fill=NO_COLOR, stroke=NO_COLOR, strokeWidth=None):
-        e = CTextBox(fs, cx, cy, cw, ch, eId, nextBox, nextPage, fill, stroke, strokeWidth)
-        self.append(e)
-        return e
+        x, y, w, h = cr2p(cx, cy, cw, ch, self.getStyle())
+        return self.textBox(fs, x, y, w, h, eId, nextBox, nextPage, fill, stroke, strokeWidth)
         
     def text(self, fs, x, y, eId=None, font=None, fontSize=None, fill=NO_COLOR):
         u"""Draw formatted string.
         We don't need w and h here, as it is made by the text and style combinations."""
-        e = Text(fs, x, self.h - y, eId, font, fontSize, fill)
-        self.append(e) # Append to drawing sequence and store by optional element id.
+        e = Text(fs, eId, font, fontSize, fill)
+        self.place(e, x, y) # Append to drawing sequence and store by (x,y) and optional element id.
         return e
                 
     def cText(self, fs, cx, cy, eId=None, font=None, fontSize=None, fill=NO_COLOR):
         u"""Draw formatted string.
         We don't need w and h here, as it is made by the text and style combinations."""
-        e = CText(fs, cx, cy, eId, font, fontSize, fill)
-        self.append(e) # Append to drawing sequence and store by optional element id.
-        return e
+        x, y = cp2p(cx, cy, self.getStyle())
+        return self.text(fs, x, y, eId, font, fontSize, fill)
                 
     def rect(self, x, y, w, h, eId=None, fill=0, stroke=None, strokeWidth=None):
-        e = Rect(x, self.h - y - h, w, h, eId, fill=fill, stroke=stroke, strokeWidth=strokeWidth)
-        self.append(e) # Append to drawing sequence and store by optional element id.
+        e = Rect(w, h, eId, fill=fill, stroke=stroke, strokeWidth=strokeWidth)
+        self.place(e, x, y) # Append to drawing sequence and store by optional element id.
         return e
                 
     def cRect(self, cx, cy, cw, ch, eId=None, fill=0, stroke=None, strokeWidth=None):
+        x, y, w, h = cr2p(cx, cy, cw, ch, self.getStyle())
         e = CRect(cx, cy, cw, ch, eId, fill=fill, stroke=stroke, strokeWidth=strokeWidth)
-        self.append(e) # Append to drawing sequence and store by optional element id.
+        self.append(e, x, y) # Append to drawing sequence and store by optional element id.
         return e
                 
     def oval(self, x, y, w, h, eId=None, fill=NO_COLOR, stroke=NO_COLOR, strokeWidth=None):
@@ -655,43 +764,58 @@ class Page(object):
         self.append(e) # Append to drawing sequence and store by optional element id.
         return e
                 
+    def cLine(self, cx, cy, cw, ch, eId=None, stroke=None, strokeWidth=None):
+        x, y, w, h = cr2p(cx, cy, cw, ch, self.getStyle())
+        e = Line(w, h, eId, stroke=stroke, strokeWidth=strokeWidth)
+        self.place(e, x, y) # Append to drawing sequence and store by optional element id.
+        return e
+                
     def image(self, path, x, y, w=None, h=None, eId=None, s=None, sx=None, sy=None, fill=NO_COLOR, stroke=None, 
             strokeWidth=None, missingImageFill=NO_COLOR, caption=None, hyphenation=True):
-        e = Image(path, x, self.h - y, w, h, eId, s, sx, sy, fill, stroke, strokeWidth, 
-            missingImageFill, caption, hyphenation)
-        self.append(e)
+        e = Image(path, w, h, eId, s, sx, sy, fill, stroke, strokeWidth, missingImageFill, caption, hyphenation)
+        self.place(e, x, y)
+        return e
             
     def cImage(self, path, cx, cy, cw=None, ch=None, eId=None, s=None, sx=None, sy=None, fill=NO_COLOR, stroke=None, 
             strokeWidth=None, missingImageFill=NO_COLOR, caption=None, hyphenation=True):
-        e = CImage(path, cx, cy, cw, ch, eId, s, sx, sy, fill, stroke, strokeWidth, 
-            missingImageFill, caption, hyphenation)
-        self.append(e)
+        # Convert the column size into point size, depending on the column settings of the current template,
+        # when drawing images "hard-coded" directly on a certain page.
+        x, y, w, h = cr2p(cx, cy, cw, ch, self.getStyle())
+        return self.image(path, x, y, w, h, eId, s, sx, sy, fill, stroke, strokeWidth, missingImageFill, 
+            caption, hyphenation)
             
-    def grid(self, eId=None):
+    def grid(self, x=0, y=0, eId=None):
         e = Grid(eId)
-        self.append(e)
-    
-    def baselineGrid(self, eId=None):
+        self.place(e, x, y)
+        return e
+        
+    def baselineGrid(self, x=0, y=0, eId=None):
         e = BaselineGrid(eId)
-        self.append(e)
-                
+        self.place(e, x, y)
+        return e
+               
     def draw(self):
-        for element in self.elements:
-            element.draw(self)
+        for element, (x, y) in self.elements:
+            print element
+            element.draw(self, x, y)
         
 class Template(Page):
     u"""Template is a special kind of Page class. Possible the draw in 
     the same way. Difference is that templates cannot contain other templates."""
     
-    def __init__(self, w, h):
+    def __init__(self, w, h, style=None):
         self.w = w # Page width
         self.h = h # Page height
         self.elements = [] # Sequential drawing order of Element instances.
         self.elementIds = {} # Stored elements by their unique id, so they can be altered later, before rendering starts.
-               
-    def draw(self, page):
-        # Templates are supposed to be copied from by Page, never to be 
-        # drawing themselves.
+        self.placed = {} # Placement by (x,y) key. Value is a list of elements.
+        self.style = style # In case None, the page should use the document root style.
+ 
+    def getStyle(self, name=None):
+        return self.style
+            
+    def draw(self, page, x, y):
+        # Templates are supposed to be copied from by Page, never to be drawing themselves.
         pass 
                   
 class Document(object):
@@ -700,90 +824,20 @@ class Document(object):
     PAGE_CLASS = Page # Allow inherited versions of the Page class.
     TEMPLATE_CLASS = Template # Allow inherited versions of the Template class.
     FIRST_PAGE_NUMBER = 1
-
-    U = 8
-    DEFAULT_PW = 595 # 210mm, international generic fit.
-    DEFAULT_PH = 11 * 72 # 11", international generic fit.
-    ML = MT = MR = 3*U
-    MB = 5*U
-    CW = CH = 10*U
-    GUTTER = U
     
-    GRID_FILL = (0.8, 0.9, 1)
-    GRID_STROKE = (0.8, 0.8, 0.9)
-    GRID_STROKEWIDTH = 1
-    
-    def __init__(self, w=DEFAULT_PW, h=DEFAULT_PH, ml=ML, mt=MT, mr=MR, mb=MB, cw=CW, ch=None,
-        g=GUTTER, gridFill=GRID_FILL, gridStroke=GRID_STROKE, gridStrokeWidth=GRID_STROKEWIDTH,
-        missingImageFill=NO_COLOR, baselineGrid=None, baselineGridStroke=None, title=None, styles=None, pages=1, template=None):
+    def __init__(self, rootStyle, title=None, styles=None, template=None, pages=1):
         u"""Contains a set of Page instance and formatting methods. Allows to compose the pages
         without the need to send them directly to the output. This allows "asynchronic" page filling."""
- 
-        rootStyle = Style(
-            name = 'root',
-            w = w or self.DEFAULT_PW,
-            h = h or self.DEFAULT_PH, # Size of the document..
-            ml = ml, mt = mt, mr = mr, mb = mb, # Margins 
-            cw = cw, ch = ch or cw , # Column width for column2point calculations.
-            g = g, # Gutter
-            # Grid
-            showGrid = False,
-            gridFill = gridFill,
-            gridStroke = gridStroke, # Stroke of grid lines in part of a template.
-            gridStrokeWidth = gridStrokeWidth,
-            missingImageFill = missingImageFill,
-            baselineGrid = baselineGrid or self.U,
-            baselineGridStroke = baselineGridStroke or gridStroke,
-            # Typographic defaults
-            font = 'Georgia', # Default is to avoid existing font and fontSize in the graphic state.
-            fallbackFont = 'LucidaGrande',
-            fontSize = 12, # Font size in points
-            tracking = 0, # Tracking of the current font/fontSize
-            align = 'left', # Alignment, one if ('left', 'justified', 'right')
-            tabs = None, # Set tabs,tuples of (float, alignment) Aligment can be “left”, “center”, “right” 
-                # or any other character. If a character is provided the alignment will be right and 
-                # centered on the specified character.
-            openTypeFeatures = None, # List of supported OpenType features. 
-                # c2pc, c2sc, calt, case, cpsp, cswh, dlig, frac, liga, lnum, onum, ordn, pnum, rlig, sinf, 
-                # smcp, ss01, ss02, ss03, ss04, ss05, ss06, ss07, ss08, ss09, ss10, ss11, ss12, ss13, ss14, 
-                # ss15, ss16, ss17, ss18, ss19, ss20, subs, sups, swsh, titl, tnum
-            leading = None, # Relative factor to fontSize.
-            rLeading = 1.4, # Relative factor to fontSize.
-            paragraphTopSpacing = None,
-            rParagraphTopSpacing = None,
-            paragraphBottomSpacing = None,
-            rParagraphBottomSpacing = None,
-            baselineGridfit = False,
-            firstLineGridfit = True,
-            baselineShift = None, # Absolute baseline shift in points. Positive value is upward.
-            rBaselineShift = None, # Relative baseline shift, multiplyer to current self.fontSize 
-            needsBelow = 0, # Check if this space is available below, to get text lines below headings.
-            firstLineIndent = None, # Indent of first paragraph in a text tag
-            rFirstLineIndent = None, # First line indent as factor if font size.
-            indent = None,
-            rIndent = None, # indent as factor of font size.
-            tailIndent = None,
-            rTailIndent = None, # tailIndent as factor of font size
-            language = 'en',
-            hyphenation = True,
-            wordSpace = 1, # Wordspace multiplication factor
-            stripWhiteSpace = ' ', # Strip pre/post white space from e.text and e.tail and add single space
-            # Color
-            fill = 0, # Default is black
-            stroke = None, # Default is to have no stroke.
-            cmykFill = NO_COLOR, # Flag to ignore, None is valid value for color.
-            cmykStroke = NO_COLOR, # Flag to ignore, None is valid value for color.
-            strokeWidth = None, # Stroke thickness
-        )
-        self.w = w
-        self.h = h
+
+        self.w = rootStyle.w
+        self.h = rootStyle.h
         self.title = title or 'Untitled'
         self.pages = {} # Key is pageID, often the page number. Value is Page instances.
-        self.initializeStyles(styles, rootStyle)
+        self.initializeStyles(rootStyle, styles)
         # Before we can do any text format (for which the graphic state needs to be set,
         # we need to create at least one first page as canvas. Otherwise a default page will be opened
         # by Drawbot. 
-        self.makePages(max(pages, 1), w, h, template) # Expand the document to the request anount of pages.
+        self.makePages(max(pages, 1), self.w, self.h, template) # Expand the document to the request anount of pages.
         # Mark that the first page is already initialized, to avoid rendering a new page on page.export( )         
         self.needsCanvasPage = False
         # Storage for collected content, referring to their pages after composition.
@@ -791,21 +845,13 @@ class Document(object):
         self.literatureRefs = {}
         self.toc = {}
                        
-    def initializeStyles(self, styles, rootStyle):
+    def initializeStyles(self, rootStyle, styles):
         u"""Make sure that the default styles always exist."""
         if styles is None:
             styles = {}
         self.styles = styles
-        # Make sure that the default styles for document and page are always there.
-        name = 'root'
-        self.addStyle(name, rootStyle)
-        name = 'page'
-        if not name in self.styles:
-            self.addStyle(name, Style(name=name, showGrid=True))
-        name = 'document'
-        if not name in self.styles:
-            self.addStyle(name, Style(name=name, showGrid=True))
-        self.styles = styles # Dictionary of styles. Key is XML tag name value is Style instance.
+        # Make sure that the default styles for document and page are always there as root.
+        self.styles['root'] = rootStyle
 
     def fromRootStyle(self, **kwargs):
         u"""Answer a new style as copy from the root style. Overwrite the defined arguments."""
@@ -819,6 +865,7 @@ class Document(object):
  
     def getStyle(self, name):
         u"""Answer the names style. If that does not exist, answer the default root style."""
+        print '++++++', name, self.styled.get(name), self.styles['root']
         self.styles.get(name) or self.styles['root']
         
     def getRootStyle(self):
@@ -882,7 +929,7 @@ class Document(object):
         return page
   
     def getStyle(self, name):
-        return self.styles[name]
+        return self.styles.get(name)
         
     def getTemplate(self, name):
         return self.templates[name]
@@ -914,8 +961,154 @@ class Document(object):
             # Let the page draw itself on the current Drawbot view port. pIndex can be used on output.
             page.draw() 
         saveImage(fileName)
+
+class Actor(object):
+    pass
+    
+class TypeSetter(Actor):
+    def __init__(self, document, galley):
+        self.document = document # For storing document info, such as TOC-building.
+        self.galley = galley # Current Galley to paste Elements on. No vertical boundary while typesetting.
+        self.gState = [document.getRootStyle()] # Stack of styles with current state of (font, fontSize, ...)
+        self.formatted = FormattedString() # Building formatted string, while rendering tags.
+
+    def pushStyle(self, style):
+        u"""As we want cascading font and fontSize in the galley elements, we need to keep track
+        of the stacking of XML-hiearchy of the tag styles, while generating the sequence of elements.
+        The styles may omit the font or fontSize, and still we need to be able to set the element
+        attributes rightly, inheriting from the current settings. Copy the current style and add 
+        overwrite the attributes in style. This way the current style always contains all attributes 
+        of the root style."""
+        nextStyle = copy.copy(self.gState[-1])
+        if style is not None:
+            for name, value in style.__dict__.items():
+                if name.startswith('_'):
+                    continue
+                setattr(nextStyle, name, value)
+        self.gState.append(nextStyle)
+        return nextStyle
+        
+    def popStyle(self):
+        u"""Pop the stack of graphic states (styles) and answer the current one."""
+        self.gState.pop()
+        return self.gState[-1]
  
-class Composer(object):
+    def typeset(self, page, tb, fs):
+        u"""Typeset the text in the textbox copied from flow. If the text is if running over the edge
+        of the textbox, then create a new page. This shows the collission between purely
+        top-down hierarchy of information and the local layout decisions of columns, lines and
+        words. In this case, the low level typeset( ) needs to have all info accessable to create
+        a new page. The line                             
+            page, tb, fs = self.typeset(page, tb, fs)
+        is doing that, where the current (page, tb) is replaced by another set and then typesetting
+        continues at the point where it left on the previous."""
+        overflow = tb.typeset(page, fs)
+        if overflow: # Any overflow from typesetting in the text box, then find new from page/flow
+            page, tb = page.getNextFlowBox(tb)
+            assert tb is not None # If happes, its a mistake in one of the templates.
+            fs = overflow
+        return page, tb, fs
+    
+    def typesetNode(self, node, page, tb=None, fs=None, style=None):
+
+        if style is None:
+            style = page.getStyle(node.tag)
+        style = self.pushStyle(style)
+
+        if fs is None:
+            fs = getFormattedString('', style)
+        
+        nodeText = node.text
+        if nodeText is not None:
+            if style.stripWhiteSpace:
+                nodeText = nodeText.strip() #+ style.stripWhiteSpace
+            if nodeText: # Anythong left to add?
+                #print node.tag, `node.text`
+                fs += getFormattedString(nodeText, style)
+            # Handle the block text of the tag, check if it runs over the box height.
+            page, tb, fs = self.typeset(page, tb, fs)
+            
+        # Type set all child node in the current node, by recursive call.
+        for child in node:
+            hook = 'node_'+child.tag
+            # Method will handle the styled body of the element, but not the tail.
+            if hasattr(self, hook): 
+                page, tb, fs = getattr(self, hook)(child, page, tb, fs)
+                childTail = child.tail
+                if childTail is not None:
+                    if style.stripWhiteSpace:
+                        childTail = childTail.strip() #+ style.stripWhiteSpace
+                    if childTail: # Anything left to add?
+                        #print child.tag, `child.tail`
+                        fs += getFormattedString(childTail, style)
+                # Handle the tail text of the tag.
+                page, tb, fs = self.typeset(page, tb, fs)
+                
+            else: # If no method hook defined, then just solve recursively.
+                page, tb, fs = self.typesetNode(child, page, tb, fs)
+
+        # XML-nodes are organized as: node - node.text - node.children - node.tail
+        # If there is no text or if the node does not have tail text, these are None.
+        # Restore the graphic state at the end of the element content processing to the 
+        # style of the parent in order to process the tail text.
+        style = self.popStyle()
+        nodeTail = node.tail
+        if nodeTail is not None:
+            if style.stripWhiteSpace:
+                nodeTail = nodeTail.strip() + style.stripWhiteSpace
+            if nodeTail: # Anython left to add?
+                #print node.tag, `node.tail`
+                fs += getFormattedString(nodeTail, style)
+        page, tb, fs = self.typeset(page, tb, fs)
+        return page, tb, fs
+                         
+    def typesetFile(self, fileName, page, flowId='main'):
+        u"""Read the XML document and parse it into a tree of document-chapter nodes. Make the typesetter
+        start at page pageNumber and find the name of the flow in the page template."""
+
+        self.fileName = fileName
+        fileExtension = fileName.split('.')[-1]
+        if fileExtension == 'md':
+            # If we have MarkDown content, conver to HTNK/XML
+            f = codecs.open(fileName, mode="r", encoding="utf-8")
+            mdText = f.read()
+            f.close()
+            mdExtensions = [FootnoteExtension(), LiteratureExtension(), Nl2BrExtension()]
+            xml = '<document>%s</document>' % markdown.markdown(mdText, extensions=mdExtensions)
+            xmlName = fileName + '.xml'
+            f = codecs.open(xmlName, mode="w", encoding="utf-8")
+            f.write(xml)
+            f.close()
+            fileName = xmlName
+
+        tree = ET.parse(fileName)
+        root = tree.getroot() # Get the root element of the tree.
+        # Get the root style that all other styles will be merged with.
+        rootStyle = self.document.getRootStyle()
+        # Build the formatted string at the same time as filling the flow columns.
+        # This way we can keep track where the elemenets go, e.g. for foot note and image references.
+        tb = page.findElement(flowId) # Find the named TextBox in the page/template.
+        assert tb is not None # Make sure if it is. Otherwise there is a mistage in the template.
+        # Collect all flowing text in one formatted string, while simulating the page/flow, because
+        # we need to keep track on which page/flow nodes results get positioned (e.g. for toc-head
+        # reference, image index and footnote placement.   
+        self.typesetNode(root, page, tb)
+        # Now run through the footnotes and typeset them on the pages where the reference is located.
+        # There are other options to place footnotes (e.g. at the end of a chapter). Either subclass
+        # and rewite self.typesetFootnotes() or implement optional behavior to be selected from the outside.
+        #self.typesetFootnotes()
+        
+    def typesetFootnotes(self):
+        footnotes = self.document.footnotes
+        for index, (page, e, p) in footnotes.items():
+            style = page.getStyle('footnote')
+            fs = getFormattedString('%d ' % index, style)
+            tb = page.findElement('footnote')
+            if tb is not None:
+                page, tb, fs = self.typesetNode(p, page, tb, fs, style)
+
+ 
+class Composer(Actor):
     def __init__(self, document):
         self.document = document
         self.gState = [document.getRootStyle()] # State of current state of (font, fontSize)
@@ -923,29 +1116,37 @@ class Composer(object):
                         
     def node_h1(self, node, page, tb, fs):
         u"""Collect the page-node-pageNumber connection."""
-        fs = fs + '\n' # Add line break to whatever style/content there was before.
+        # Add line break to whatever style/content there was before. 
+        # Add invisible h2-marker in the string, to be retrieved by the composer.
+        fs = fs + '\n'# + getMarker(node.tag) 
         self.document.addToc(node, page, fs, 'h1')
         page, fb, fs = self.typesetNode(node, page, tb, fs)
         return page, tb, fs + '\n' # Add line break to end of head.
 
     def node_h2(self, node, page, tb, fs):
         u"""Collect the page-node-pageNumber connection."""
-        fs = fs+'\n' # Add line break to whatever style/content there was before.
-        self.document.addToc(node, page, fs, 'h2')
+        # Add line break to whatever style/content there was before. 
+        # Add invisible h2-marker in the string, to be retrieved by the composer.
+        fs = fs + '\n'# + getMarker(node.tag) 
+        self.document.addToc(node, page, fs, node.tag)
         page, fb, fs = self.typesetNode(node, page, tb, fs)
         return page, tb, fs + '\n' # Add line break to end of head.
 
     def node_h3(self, node, page, tb, fs):
         u"""Collect the page-node-pageNumber connection."""
-        fs = fs+'\n' # Add line break to whatever style/content there was before.
-        self.document.addToc(node, page, fs, 'h3')
+        # Add line break to whatever style/content there was before. 
+        # Add invisible h3-marker in the string, to be retrieved by the composer.
+        fs = fs + '\n'# + getMarker(node.tag) 
+        self.document.addToc(node, page, fs, node.tag)
         page, fb, fs = self.typesetNode(node, page, tb, fs)
         return page, tb, fs + '\n' # Add line break to end of head.
         
     def node_h4(self, node, page, tb, fs, f):
         u"""Collect the page-node-pageNumber connection."""
-        fs = fs+'\n' # Add line break to whatever style/content there was before.
-        self.document.addToc(node, page, fs, 'h4')
+        # Add line break to whatever style/content there was before. 
+        # Add invisible h3-marker in the string, to be retrieved by the composer.
+        fs = fs + '\n'# + getMarker(node.tag) 
+        self.document.addToc(node, page, fs, node.tag)
         page, fb, fs = self.typesetNode(node, page, tb, fs)
         return page, tb, fs + '\n' # Add line break to end of head.
 
@@ -1015,8 +1216,11 @@ class Composer(object):
                 captionStyle = self.pushStyle(page.getStyle('caption'))
                 imageElement.caption = getFormattedString(caption+'\n', captionStyle)
                 self.popStyle() # captionStyle
+            # Add invisible marker to the FormattedString, to indicate where the image
+            # reference went in a textBox after slicing the string.
+            fs += getMarker(node.tag, src) 
         else:
-            fs += FormattedString('\n[Could on find space for image %s]\n' % src, fill=(1, 0, 0))
+            fs += FormattedString('\n[Could not find space for image %s]\n' % src, fill=(1, 0, 0))
         return page, tb, fs
                                     
     def pushStyle(self, style):

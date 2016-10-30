@@ -4,9 +4,9 @@ import fontTools
 import copy
 import xml.etree.ElementTree as ET
 
-import documentG # Temp different from document, while developing Galley
-reload(documentG)
-from documentG import Document, Page, Composer, Template, Galley, getRootStyle
+import document 
+reload(document)
+from document import Document, Page, Composer, Template, Galley, getRootStyle
 
 FILENAME = 'automaticLayout_nl.md' # 'automaticLayout_nl.md'
 TITLE = 'Automatic Layout'
@@ -109,17 +109,16 @@ def makeDocument():
     doc.newStyle(name='document')
     doc.newStyle(name='page')             
     doc.newStyle(name='chapter', font=BOOK)    
-    doc.newStyle(name='title', fontSize=32, font=BOLD)
-    doc.newStyle(name='subtitle', fontSize=16, font=BOOK_ITALIC)
-    doc.newStyle(name='author', fontSize=16, font=BOOK, fill=(1, 0, 0))
-    doc.newStyle(name='h1', fontSize=20, font=SEMIBOLD, fill=0.1, stroke=None,
+    doc.newStyle(name='title', fontSize=rs.fontSize*3, font=BOLD)
+    doc.newStyle(name='subtitle', fontSize=rs.fontSize*1.5, font=BOOK_ITALIC)
+    doc.newStyle(name='author', fontSize=rs.fontSize*1.5, font=BOOK, fill=(1, 0, 0))
+    doc.newStyle(name='h1', fontSize=rs.fontSize*2, font=SEMIBOLD, fill=0.1, stroke=None,
         leading=20, rLeading=0, tracking=H1_TRACK, needsBelow=rs.needsBelow)
-    doc.newStyle(name='h2', fontSize=16, font=SEMIBOLD, fill=0.2, stroke=None, 
+    doc.newStyle(name='h2', fontSize=rs.fontSize*1.5, font=SEMIBOLD, fill=0.2, stroke=None, 
         leading=20, rLeading=0, tracking=H2_TRACK, needsBelow=rs.needsBelow)
-    doc.newStyle(name='h3', fontSize=12, font=MEDIUM, fill=0, 
+    doc.newStyle(name='h3', fontSize=rs.fontSize*1.2, font=MEDIUM, fill=0, 
         leading=15, rLeading=0, needsBelow=rs.needsBelow,
-        tracking=H3_TRACK,
-        paragraphTopSpacing=U, paragraphBottomSpacing=U/2)
+        tracking=H3_TRACK, paragraphTopSpacing=rs.u, paragraphBottomSpacing=rs.u/2)
     
     # Spaced paragraphs.
     doc.newStyle(name='p', fontSize=rs.fontSize, font=BOOK, fill=0.1, 
