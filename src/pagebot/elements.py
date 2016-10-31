@@ -93,7 +93,7 @@ class Galley(Element):
 class TextBox(Element):
     def __init__(self, fs, w, h, eId=None, nextBox=None, nextPage=1, fill=NO_COLOR, stroke=NO_COLOR, 
             strokeWidth=None ):
-        self._fs = FormattedString()+fs # Make sure it is a formatted  string.
+        self.fs = FormattedString()+fs # Make sure it is a formatted  string.
         self.w = w
         self.h = h
         self.eId = eId
@@ -102,20 +102,26 @@ class TextBox(Element):
         self.fill = fill
         self.stroke = stroke
         self.strokeWidth = strokeWidth
-        self.overflow = None # Will contain overflow formatted text after drawing.
 
     def getFs(self):
-        return self._fs
+        return self.fs
 
     def append(self, s, style=None):
-        self._fs += getFormattedString(s, style)
-        
-    def getTextSize(self, page, fs):
-        """Figure out what the height of the text is, with the width of this text box."""
+        self.fs += getFormattedString(s, style)
+        return self.getOverflow()
+
+    def getTextSize(self, fs=None):
+        """Figure out what the height of the text fs is, with the width of this
+        text box. If fs is omitted, then answer the cache size."""
+        if fs is None:
+            fs = self.fs
         return textSize(fs, width=self.w)
     
-    def typeset(self, page, fs):
-        self._fs = fs
+    def getOverflow(self, fs=None):
+        """Figure out what the height of the text is, with the width of this
+        text box. If fs is omitted, then answer the cache size."""
+        if fs is None:
+            fs = self.fs
         # Run simulation of text, to see what overflow there is.
         # TODO: Needs to be replaced by textOverflow() as soon as it is available
         return textBox(fs, (10000, 0, self.w, self.h))
@@ -126,7 +132,7 @@ class TextBox(Element):
             stroke(None)
             rect(x, y, self.w, self.h)
         hyphenation(True)
-        textBox(self._fs, (x, y, self.w, self.h))
+        textBox(self.fs, (x, y, self.w, self.h))
         if self.stroke != NO_COLOR and self.strokeWidth:
             setStrokeColor(self.stroke, self.strokeWidth)
             fill(None)

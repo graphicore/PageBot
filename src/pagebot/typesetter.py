@@ -162,7 +162,7 @@ class Typesetter(object):
                 nodeText = nodeText.strip() #+ style.stripWhiteSpace
             if nodeText: # Anythong left to add?
                 #print node.tag, `node.text`
-                tb.fs += getFormattedString(nodeText, style)
+                tb.append(getFormattedString(nodeText, style))
             
         # Type set all child node in the current node, by recursive call.
         for child in node:
@@ -176,7 +176,7 @@ class Typesetter(object):
                         childTail = childTail.strip() #+ style.stripWhiteSpace
                     if childTail: # Anything left to add?
                         #print child.tag, `child.tail`
-                        tb.fs += getFormattedString(childTail, style)
+                        tb.append(getFormattedString(childTail, style))
                 
             else: # If no method hook defined, then just solve recursively.
                 self.typesetNode(child, style)
@@ -192,7 +192,7 @@ class Typesetter(object):
                 nodeTail = nodeTail.strip() + style.stripWhiteSpace
             if nodeTail: # Anython left to add?
                 #print node.tag, `node.tail`
-                tb.fs += getFormattedString(nodeTail, style)
+                tb.append(getFormattedString(nodeTail, style))
                          
     def typesetFile(self, fileName):
         u"""Read the XML document and parse it into a tree of document-chapter nodes. Make the typesetter

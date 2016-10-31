@@ -72,7 +72,7 @@ class Page(object):
             page = self.nextPage(tb.nextPage, makeNew)
         else:
             page = self
-        return page, page.findElement(tb.nextBox)
+        return page, page.getElement(tb.nextBox)
         
     def getStyle(self, name=None):
         style = None

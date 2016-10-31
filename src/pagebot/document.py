@@ -18,6 +18,7 @@ class Document(object):
         self.w = rootStyle.w
         self.h = rootStyle.h
         self.title = title or 'Untitled'
+        self.template = template # Store as document master template if undefine in pages.
         self.pages = {} # Key is pageID, often the page number. Value is Page instances.
         self.initializeStyles(rootStyle, styles)
         # Before we can do any text format (for which the graphic state needs to be set,
@@ -94,11 +95,15 @@ class Document(object):
         u"""Answer the next page of page. If it does not exist, create a new page."""
         pageNumber = page.pageNumber + nextPage
         if not pageNumber in self.pages:
-            self.newPage(pageNumber=pageNumber, template=page.template)
+            if template is None: # If template undefined, then use current page template.
+                template = page.template or self.template
+            self.newPage(pageNumber=pageNumber, template=template)
         return self.getPage(pageNumber)
           
     def makePages(self, count, w=None, h=None, template=None):
         for n in range(count):
+            if template is None: # If template undefined, then use document master template.
+                template = self.template
             self.newPage(w, h, n, template=template)
             if n == 0:
                 # Actually make the first page as current canvas for textbox to calculate on.
@@ -110,6 +115,8 @@ class Document(object):
         u"""Create a new page with the optional (w,h). Use (self.w, self.h) if one of the values is omitted.
         If pageNumber is omitted, then use the highest page number in self.pages as previous page.
         If pageNumber already exists, then raise an error."""
+        if template is None: # If template undefined, then used document master template.
+            template = self.getTemplate
         if pageNumber is None:
             if not self.pages:
                 pageNumber = self.FIRST_PAGE_NUMBER

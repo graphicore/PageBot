@@ -123,7 +123,7 @@ def makeDocument():
     # Create new document with (w,h) and fixed amount of pages.
     # Make number of pages with default document size.
     # Initially make all pages default with template2
-    doc = Document(rs, pages=2) 
+    doc = Document(rs, pages=2, template=template2) 
      
     # Add styles for whole document and text flows.               
     doc.newStyle(name='chapter', font=BOOK)    
