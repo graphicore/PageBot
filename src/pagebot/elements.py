@@ -2,7 +2,9 @@
 
 import os
 import copy
-from drawBot import *
+from drawBot import FormattedString, textSize, stroke, strokeWidth, fill, font, fontSize, text, \
+    newPath, drawPath, moveTo, lineTo, line, rect, oval, save, scale, image, textOverflow, \
+    textBox, hyphenation, restore, imageSize
 from style import NO_COLOR
 from pagebot import getFormattedString, setFillColor, setStrokeColor
        
@@ -103,6 +105,9 @@ class TextBox(Element):
         self.stroke = stroke
         self.strokeWidth = strokeWidth
 
+    def __len__(self):
+        return len(self.fs)
+
     def getFs(self):
         return self.fs
 
@@ -123,9 +128,8 @@ class TextBox(Element):
         if fs is None:
             fs = self.fs
         # Run simulation of text, to see what overflow there is.
-        # TODO: Needs to be replaced by textOverflow() as soon as it is available
-        return textBox(fs, (10000, 0, self.w, self.h))
-        
+        return textOverflow(fs, (0, 0, self.w, self.h), 'left')
+
     def draw(self, page, x, y):
         if self.fill != NO_COLOR:
             setFillColor(self.fill)
@@ -158,7 +162,7 @@ class Text(Element):
         if self.fontSize is not None:
             fontSize(self.fontSize)
         # TODO: replace by a more generic replacer. How to do that with FormattedStrings?
-        s = ('%s' % self._fs).replace('#?#', `page.pageNumber+1`)
+        s = ('%s' % self._fs).replace('#?#', repr(page.pageNumber+1))
         text(s, (x, y))
                                              
 class Rect(Element):
@@ -212,7 +216,7 @@ class Image(Element):
         self.h = h # Target height, whichever fits best to original proportions.
         self.setPath(path) # If omitted, a gray/crossed rectangle will be drawn.
         self.eId = eId # Unique element id
-        self.sx = sx or s # In case scale is supplied, instad of target w/h
+        self.sx = sx or s # In case scale is supplied, instead of target w/h
         self.sy = sy or s
         self.fill = fill # Only use alpha channel of this color tuple of 4
         self.stroke = stroke
@@ -340,7 +344,7 @@ class Grid(Element):
                 moveTo((x+style.cw, 0))
                 lineTo((x+style.cw, style.h))
                 drawPath()
-                text(fs+`index`, (x + M*0.3, y + M/4))
+                text(fs+repr(index), (x + M*0.3, y + M/4))
                 index += 1
                 x += style.cw + style.g
             index = 0
@@ -351,7 +355,7 @@ class Grid(Element):
                 moveTo((0, y-style.cw))
                 lineTo((style.w, y-style.cw))
                 drawPath()        
-                text(fs+`index`, (style.ml - M/2, y - M*0.6))
+                text(fs+repr(index), (style.ml - M/2, y - M*0.6))
                 index += 1
                 y -= style.cw + style.g
 
@@ -378,7 +382,7 @@ class BaselineGrid(Element):
             moveTo((M, y))
             lineTo((page.w - M, y))
             drawPath() 
-            text(fs + `line`, (M-2, y-M*0.6))  
-            text(fs + `line`, (page.w - M-4, y-M*0.6))  
+            text(fs + repr(line), (M-2, y-M*0.6))
+            text(fs + repr(line), (page.w - M-4, y-M*0.6))
             line += 1 # Increment line index.   
             y -= style.baselineGrid # Next vertical line position of baseline grid.

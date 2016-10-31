@@ -67,12 +67,19 @@ class Page(object):
         u"""Answer the next page after self in the document."""
         return self.parent.nextPage(self, nextPage, makeNew)
 
-    def getNextFlowBox(self, tb, makeNew=True):
+    def getNextFlowBox(self, tb, makeNew=False):
         if tb.nextPage:
             page = self.nextPage(tb.nextPage, makeNew)
+            assert page is not None
+            tb = page.getElement(tb.nextBox)
+            assert tb is not None and not len(tb)
         else:
             page = self
-        return page, page.getElement(tb.nextBox)
+            print 'aaaaaaa', tb.eId, tb.nextBox
+            tb = self.getElement(tb.nextBox)
+            # Make sure that this one is empty, otherwise mistake in template
+            assert not len(tb)
+        return page, tb
         
     def getStyle(self, name=None):
         style = None
