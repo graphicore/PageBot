@@ -136,9 +136,7 @@ def makeDocument():
     doc.newStyle(name='li', fontSize=rs.fontSize, font=BOOK, 
         tracking=P_TRACK, leading=rs.leading, rLeading=rs.rLeading,
         hyphenation=True, indent=rs.listIndent, firstLineIndent=1, 
-        tabs=rs.listTabs,
-        #tailIndent=U, 
-        stripWhiteSpace=' ')
+        tabs=rs.listTabs, stripWhiteSpace=' ')
     doc.newStyle(name='ul', stripWhiteSpace=' ',)
     doc.newStyle(name='literatureref', stripWhiteSpace=False,
         fill=0.5, rBaselineShift=0.2, fontSize=14*0.8)
@@ -150,16 +148,18 @@ def makeDocument():
         font=BOOK_ITALIC, indent=rs.u/2, tailIndent=-rs.u/2, 
         hyphenation=rs.hyphenation)
 
-    # Create main Galley for this page, for pasting the sequence of elements.    
-    g = Galley() 
-
     # Change template of page 1
     doc[0].setTemplate(template1)
     
+    # Create main Galley for this page, for pasting the sequence of elements.    
+    g = Galley() 
     # Fill the main flow of text boxes with the ML-->XHTML formatted text. 
+    t = Typesetter(doc)
+    t.typesetFile(FILENAME, doc[0], flowId0)
+    
     c = Composer(doc)
-    c.typesetFile(FILENAME, doc[0], flowId0)
-     
+    c.compose(galley)
+    
     return doc
         
 d = makeDocument()
