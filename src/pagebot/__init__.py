@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 import re
-from drawBot import *
+from drawBot import FormattedString, cmykFill, fill, cmykStroke, stroke, strokeWidth
 from style import NO_COLOR
 
 def setFillColor(c, fs=None, cmyk=False):
@@ -31,7 +31,7 @@ def setFillColor(c, fs=None, cmyk=False):
             else:
                 fs.fill(*c)
     else:
-        raise ValueError('Error in color format "%s"' % c)
+        raise ValueError('Error in color format "%s"' % repr(c))
     
 def setStrokeColor(c, w=1, fs=None, cmyk=False):
     u"""Set global stroke color or the color of the formatted string."""
@@ -97,7 +97,7 @@ FIND_FS_MARKERS = re.compile('\=\=([a-zA-Z0-9_]*)\-\-([^=]*)\=\=')
 def findMarkers(fs):
     u"""Answer a dictionary of markers with their arguments that exist in a given FormattedString."""
     markers = {}
-    for markerId, args in FIND_FS_MARKERS.findall(`fs`):
+    for markerId, args in FIND_FS_MARKERS.findall(repr(fs)):
         if not markerId in markers:
             markers[markerId] = []
         markers[markerId].append(args)
@@ -106,7 +106,6 @@ def findMarkers(fs):
 def getFormattedString(t, style=None):
     u"""Answer a formatted string from valid attributes in Style. Set the all values after testing,
     so they can inherit from previous style formats."""
-    from drawBot import FormattedString
     fs = FormattedString()
     if style is not None:
         if style.font is not None:
@@ -118,11 +117,11 @@ def getFormattedString(t, style=None):
         if style.fill is not NO_COLOR: # Test on this flag, None is valid value
             setFillColor(style.fill, fs)
         if style.cmykFill is not NO_COLOR:
-            setCmykFillColor(style.cmykFill, fs)
+            setFillColor(style.cmykFill, fs, cmyk=True)
         if style.stroke is not NO_COLOR:
             setStrokeColor(style.stroke, style.strokeWidth, fs)
         if style.cmykStroke is not NO_COLOR:
-            setCmykStroke(style.cmykStroke, style.strokeWidth, fs)
+            setStrokeColor(style.cmykStroke, style.strokeWidth, fs, cmyk=True)
         if style.align is not None:
             fs.align(style.align)
         if style.leading is not None or style.rLeading is not None:

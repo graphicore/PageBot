@@ -44,8 +44,12 @@ SHOW_FLOW_CONNECTIONS = True
 GRID_FILL = (0.8, 0.9, 1)
 GRID_STROKE = (0.8, 0.8, 0.9)
 GRID_STROKEWIDTH = 1
-FLOW_CONNECTION_STROKE = (1, 0, 0, 0.9)
-FLOW_CONNECTION_STROKEWIDTH = 3
+FLOW_CONNECTION_STROKE1 = (0.2, 0.5, 0.1, 0.8)
+FLOW_CONNECTION_STROKE2 = (1, 0, 0, 0.8)
+FLOW_CONNECTION_STROKEWIDTH = 2 # Line width of curved flow lines
+FLOW_MARKER_FILL = (0.8, 0.8, 0.8, 0.5) # Fill of flow curve marker.
+FLOW_MARKER_SIZE = 8 # Size of flow marker circle.
+FLOW_CURVATURE_FACTOR = 0.15 # Factor of curved flow lines.
 # Text measures
 LEADING = BASELINE_GRID
 RLEADING = 0
@@ -85,8 +89,12 @@ def getRootStyle():
         gridStrokeWidth = GRID_STROKEWIDTH,
         # Draw connection arrows between the flow boxes on a page.
         showFlowConnections = SHOW_FLOW_CONNECTIONS, # Draw arrows between the flows for debugging.
-        flowConnectionStroke = FLOW_CONNECTION_STROKE,
+        flowConnectionStroke1 = FLOW_CONNECTION_STROKE1,
+        flowConnectionStroke2 = FLOW_CONNECTION_STROKE2,
         flowConnectionStrokeWidth = FLOW_CONNECTION_STROKEWIDTH,
+        flowMarkerFill = FLOW_MARKER_FILL,
+        flowMarkerSize = FLOW_MARKER_SIZE,
+        flowCurvatureFactor = FLOW_CURVATURE_FACTOR,
         # Image stuff
         missingImageFill = MISSING_IMAGE_FILL,
         # Typographic defaults

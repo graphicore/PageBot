@@ -5,8 +5,8 @@ import copy
 from drawBot import stroke, newPath, drawPath, moveTo, lineTo, strokeWidth, oval, fill, curveTo
 from style import NO_COLOR
 from pagebot import cr2p, cp2p, setFillColor, setStrokeColor
-from elements import Grid, BaselineGrid, Image, TextBox, Text, Rect
-           
+from elements import Grid, BaselineGrid, Image, TextBox, Text, Rect, Line, Oval
+
 class Page(object):
  
     DEFAULT_STYLE = 'page'
@@ -143,9 +143,7 @@ class Page(object):
                 
     def cRect(self, cx, cy, cw, ch, eId=None, fill=0, stroke=None, strokeWidth=None):
         x, y, w, h = cr2p(cx, cy, cw, ch, self.getStyle())
-        e = CRect(cx, cy, cw, ch, eId, fill=fill, stroke=stroke, strokeWidth=strokeWidth)
-        self.append(e, x, y) # Append to drawing sequence and store by optional element id.
-        return e
+        return self.rect(x, y, w, h, eId, fill, stroke, strokeWidth)
                 
     def oval(self, x, y, w, h, eId=None, fill=NO_COLOR, stroke=NO_COLOR, strokeWidth=None):
         e = Oval(x, self.h - y, w, h, eId, fill=fill, stroke=stroke)
@@ -207,23 +205,26 @@ class Page(object):
                 flows[element.next] = [element]
         return flows
 
-    def drawArrow(self, xs, ys, xt, yt, fillC, strokeC, lineW=4):
-        S = 12
-        setStrokeColor(strokeC, lineW)
+    def drawArrow(self, xs, ys, xt, yt, fillC, strokeC):
+        u"""Draw curved arrow marker between the two points."""
+        style = self.parent.getRootStyle()
+        fms = style.flowMarkerSize
+        fmf = style.flowCurvatureFactor
+        setStrokeColor(strokeC, style.flowConnectionStrokeWidth)
         setFillColor(fillC)
-        oval(xs - S, ys - S, 2 * S, 2 * S)
+        oval(xs - fms, ys - fms, 2 * fms, 2 * fms)
         xm = (xt + xs)/2
         ym = (yt + ys)/2
-        xb1 = xm + (yt - ys) * 0.1
-        yb1 = ym - (xt - xs) * 0.1
-        xb2 = xm - (yt - ys) * 0.1
-        yb2 = ym + (xt - xs) * 0.1
+        xb1 = xm + (yt - ys) * fmf
+        yb1 = ym - (xt - xs) * fmf
+        xb2 = xm - (yt - ys) * fmf
+        yb2 = ym + (xt - xs) * fmf
         setFillColor(None)
         newPath()
         moveTo((xs, ys))
         curveTo((xb1, yb1), (xb2, yb2), (xt, yt))
         drawPath()
-        oval(xt - S, yt - S, 2 * S, 2 * S)
+        oval(xt - fms, yt - fms, 2 * fms, 2 * fms)
 
     def drawFlowConnections(self):
         u"""If rootStyle.showFlowConnections is set, then draw the flow connections
@@ -231,9 +232,9 @@ class Page(object):
         style = self.parent.getRootStyle()
         if not style.showFlowConnections:
             return
-        fillC = (0.8, 0.8, 0.8, 0.5)
-        strokeC1 = (0.2, 0.5, 0.2)
-        strokeC2 = (1, 0, 0)
+        fillC = style.flowMarkerFill
+        strokeC1 = style.flowConnectionStroke1
+        strokeC2 = style.flowConnectionStroke2
         for seq in self.getFlows().values():
             # For all the floq sequences found in the page, draw flow arrows
             tbStart, (startX, startY) = self.getElementPos(seq[0].eId)

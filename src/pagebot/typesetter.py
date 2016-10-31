@@ -126,7 +126,6 @@ class Typesetter(object):
             caption = node.attrib.get('title')
             # Add invisible marker to the FormattedString, to indicate where the image
             # reference went in a textBox after slicing the string.
-            print tb
             tb.append(getFormattedString(caption+'\n', captionStyle))
             tb.append(getMarker(node.tag, src))
             self.popStyle() # captionStyle
