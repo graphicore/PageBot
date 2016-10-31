@@ -1,95 +1,29 @@
 # -*- coding: UTF-8 -*-
-               
+
+from page import Page, Template
+from style import Style
+from drawBot import newPage, saveImage
+            
 class Document(object):
     u"""Container of Page instance, Style instances and Template instances."""
     
     PAGE_CLASS = Page # Allow inherited versions of the Page class.
     TEMPLATE_CLASS = Template # Allow inherited versions of the Template class.
     FIRST_PAGE_NUMBER = 1
-
-    U = 8
-    DEFAULT_PW = 595 # 210mm, international generic fit.
-    DEFAULT_PH = 11 * 72 # 11", international generic fit.
-    ML = MT = MR = 3*U
-    MB = 5*U
-    CW = CH = 10*U
-    GUTTER = U
     
-    GRID_FILL = (0.8, 0.9, 1)
-    GRID_STROKE = (0.8, 0.8, 0.9)
-    GRID_STROKEWIDTH = 1
-    
-    def __init__(self, w=DEFAULT_PW, h=DEFAULT_PH, ml=ML, mt=MT, mr=MR, mb=MB, cw=CW, ch=None,
-        g=GUTTER, gridFill=GRID_FILL, gridStroke=GRID_STROKE, gridStrokeWidth=GRID_STROKEWIDTH,
-        missingImageFill=NO_COLOR, baselineGrid=None, baselineGridStroke=None, title=None, styles=None, pages=1, template=None):
+    def __init__(self, rootStyle, styles=None, title=None, pages=1, template=None):
         u"""Contains a set of Page instance and formatting methods. Allows to compose the pages
         without the need to send them directly to the output. This allows "asynchronic" page filling."""
- 
-        rootStyle = Style(
-            name = 'root',
-            w = w or self.DEFAULT_PW,
-            h = h or self.DEFAULT_PH, # Size of the document..
-            ml = ml, mt = mt, mr = mr, mb = mb, # Margins 
-            cw = cw, ch = ch or cw , # Column width for column2point calculations.
-            g = g, # Gutter
-            # Grid
-            showGrid = False,
-            gridFill = gridFill,
-            gridStroke = gridStroke, # Stroke of grid lines in part of a template.
-            gridStrokeWidth = gridStrokeWidth,
-            missingImageFill = missingImageFill,
-            baselineGrid = baselineGrid or self.U,
-            baselineGridStroke = baselineGridStroke or gridStroke,
-            # Typographic defaults
-            font = 'Georgia', # Default is to avoid existing font and fontSize in the graphic state.
-            fallbackFont = 'LucidaGrande',
-            fontSize = 12, # Font size in points
-            tracking = 0, # Tracking of the current font/fontSize
-            align = 'left', # Alignment, one if ('left', 'justified', 'right')
-            tabs = None, # Set tabs,tuples of (float, alignment) Aligment can be “left”, “center”, “right” 
-                # or any other character. If a character is provided the alignment will be right and 
-                # centered on the specified character.
-            openTypeFeatures = None, # List of supported OpenType features. 
-                # c2pc, c2sc, calt, case, cpsp, cswh, dlig, frac, liga, lnum, onum, ordn, pnum, rlig, sinf, 
-                # smcp, ss01, ss02, ss03, ss04, ss05, ss06, ss07, ss08, ss09, ss10, ss11, ss12, ss13, ss14, 
-                # ss15, ss16, ss17, ss18, ss19, ss20, subs, sups, swsh, titl, tnum
-            leading = None, # Relative factor to fontSize.
-            rLeading = 1.4, # Relative factor to fontSize.
-            paragraphTopSpacing = None,
-            rParagraphTopSpacing = None,
-            paragraphBottomSpacing = None,
-            rParagraphBottomSpacing = None,
-            baselineGridfit = False,
-            firstLineGridfit = True,
-            baselineShift = None, # Absolute baseline shift in points. Positive value is upward.
-            rBaselineShift = None, # Relative baseline shift, multiplyer to current self.fontSize 
-            needsBelow = 0, # Check if this space is available below, to get text lines below headings.
-            firstLineIndent = None, # Indent of first paragraph in a text tag
-            rFirstLineIndent = None, # First line indent as factor if font size.
-            indent = None,
-            rIndent = None, # indent as factor of font size.
-            tailIndent = None,
-            rTailIndent = None, # tailIndent as factor of font size
-            language = 'en',
-            hyphenation = True,
-            wordSpace = 1, # Wordspace multiplication factor
-            stripWhiteSpace = ' ', # Strip pre/post white space from e.text and e.tail and add single space
-            # Color
-            fill = 0, # Default is black
-            stroke = None, # Default is to have no stroke.
-            cmykFill = NO_COLOR, # Flag to ignore, None is valid value for color.
-            cmykStroke = NO_COLOR, # Flag to ignore, None is valid value for color.
-            strokeWidth = None, # Stroke thickness
-        )
-        self.w = w
-        self.h = h
+
+        self.w = rootStyle.w
+        self.h = rootStyle.h
         self.title = title or 'Untitled'
         self.pages = {} # Key is pageID, often the page number. Value is Page instances.
-        self.initializeStyles(styles, rootStyle)
+        self.initializeStyles(rootStyle, styles)
         # Before we can do any text format (for which the graphic state needs to be set,
         # we need to create at least one first page as canvas. Otherwise a default page will be opened
         # by Drawbot. 
-        self.makePages(max(pages, 1), w, h, template) # Expand the document to the request anount of pages.
+        self.makePages(max(pages, 1), self.w, self.h, template) # Expand the document to the request anount of pages.
         # Mark that the first page is already initialized, to avoid rendering a new page on page.export( )         
         self.needsCanvasPage = False
         # Storage for collected content, referring to their pages after composition.
@@ -97,21 +31,20 @@ class Document(object):
         self.literatureRefs = {}
         self.toc = {}
                        
-    def initializeStyles(self, styles, rootStyle):
+    def initializeStyles(self, rootStyle, styles):
         u"""Make sure that the default styles always exist."""
         if styles is None:
             styles = {}
-        self.styles = styles
+        self.styles = styles # Dictionary of styles. Key is XML tag name value is Style instance.
         # Make sure that the default styles for document and page are always there.
         name = 'root'
         self.addStyle(name, rootStyle)
-        name = 'page'
-        if not name in self.styles:
-            self.addStyle(name, Style(name=name, showGrid=True))
         name = 'document'
         if not name in self.styles:
             self.addStyle(name, Style(name=name, showGrid=True))
-        self.styles = styles # Dictionary of styles. Key is XML tag name value is Style instance.
+        name = 'page'
+        if not name in self.styles:
+            self.addStyle(name, Style(name=name, showGrid=True))
 
     def fromRootStyle(self, **kwargs):
         u"""Answer a new style as copy from the root style. Overwrite the defined arguments."""
@@ -220,4 +153,3 @@ class Document(object):
             # Let the page draw itself on the current Drawbot view port. pIndex can be used on output.
             page.draw() 
         saveImage(fileName)
- 

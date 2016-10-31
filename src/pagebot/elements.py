@@ -1,7 +1,11 @@
 # -*- coding: UTF-8 -*-
 
+import os
+import copy
 from drawBot import *
-        
+from style import NO_COLOR
+from pagebot import getFormattedString, setFillColor, setStrokeColor
+       
 class Element(object):
     
     def __repr__(self):
@@ -12,12 +16,24 @@ class Element(object):
         by inheriting classes, who need to calculate the height,such as galleys."""
         return self.w, self.h
 
+    def copy(self):
+        u"""Answer a copy of self."""
+        return copy.copy(self)
+
     def getWidth(self):
         return self.w
         
     def getHeight(self):
         return self.h
-             
+
+    def getElements(self):
+        u"""Default is that elements don't contain other elements."""
+        return None
+
+    def getFs(self):
+        u"""Default is that elements don't contain text."""
+        return None
+
 class Galley(Element):
     u"""A Galley is sticky sequential flow of elements, where the parts can have 
     different widths (like headlines, images and tables) or responsive width, such as images 
@@ -26,18 +42,24 @@ class Galley(Element):
     Also the sequence may change by slicing, adding or removing elements by the Composer.
     Since the Galley is a full compatible Element, it can contain other galley instances
     recursively."""
-    def __init__(self, elements=None):
+    def __init__(self, eId=None, elements=None):
         if elements is None:
             elements = [] # Key is vertical position. Elements are supposed to know their real height.
-        self.elements = elements
-    
+        self._elements = elements
+        self._footnotes = []
+        self.eId = eId # Optional element id.
+
+    def getElements(self):
+        u"""Since this is a recursive element, we can answer a list of elements."""
+        return self._elements
+
     def getSize(self):
         u"""Answer the enclosing rectangle of all elements in the galley."""
         w = h = 0
-        for e in self.elements:
+        for e in self._elements:
             ew, eh = e.getSize()
             w = max(w, ew)
-            h += EH
+            h += eh
         return w, h
 
     def getWidth(self):
@@ -48,22 +70,22 @@ class Galley(Element):
                 
     def append(self, element):
         u"""Just add to the sequence. Total size will be calculated dynamically."""
-        self.elements.append(element)
+        self._elements.append(element)
  
-    def getTextBox(self, element, style):
+    def getTextBox(self, style):
         u"""If the last element is a TextBox, answer it. Otherwise create a new textBos with style.w
         and answer that.."""
-        if not self.elements or not (self.elements[-1], TextBox):
-            self.elements.append(TextBox('', style.w, 0)) # Create a new TextBox with style width and empty height.
-        return self.elements[-1]
+        if not self._elements or not isinstance(self._elements[-1], TextBox):
+            self._elements.append(TextBox('', style.w, 0)) # Create a new TextBox with style width and empty height.
+        return self._elements[-1]
         
     def draw(self, page, x, y):
-        u"""Like "roled pasteboard" galleys can draw themselves, if the Composer decides to keep
+        u"""Like "rolled pasteboard" galleys can draw themselves, if the Composer decides to keep
         them in tact, instead of select, pick & choose elements, until the are all
         part of a page. In that case the w/h must have been set by the Composer to fit the 
         containing page."""
         gy = y
-        for element in sorted(self.elements.items()):
+        for element in sorted(self._elements.items()):
             # @@@ Find space and do more composition
             element.draw(page, x, gy)
             gy += element.getHeight()
@@ -71,7 +93,7 @@ class Galley(Element):
 class TextBox(Element):
     def __init__(self, fs, w, h, eId=None, nextBox=None, nextPage=1, fill=NO_COLOR, stroke=NO_COLOR, 
             strokeWidth=None ):
-        self.fs = FormattedString()+fs # Make sure it is a formatted  string.
+        self._fs = FormattedString()+fs # Make sure it is a formatted  string.
         self.w = w
         self.h = h
         self.eId = eId
@@ -81,18 +103,19 @@ class TextBox(Element):
         self.stroke = stroke
         self.strokeWidth = strokeWidth
         self.overflow = None # Will contain overflow formatted text after drawing.
- 
+
+    def getFs(self):
+        return self._fs
+
     def append(self, s, style=None):
-        if isinstance(s, baseString) and style is not None:
-            fs = getFormattedString(s, style)
-        self.fs += fs
+        self._fs += getFormattedString(s, style)
         
     def getTextSize(self, page, fs):
         """Figure out what the height of the text is, with the width of this text box."""
         return textSize(fs, width=self.w)
     
     def typeset(self, page, fs):
-        self.fs = fs
+        self._fs = fs
         # Run simulation of text, to see what overflow there is.
         # TODO: Needs to be replaced by textOverflow() as soon as it is available
         return textBox(fs, (10000, 0, self.w, self.h))
@@ -103,7 +126,7 @@ class TextBox(Element):
             stroke(None)
             rect(x, y, self.w, self.h)
         hyphenation(True)
-        textBox(self.fs, (x, y, self.w, self.h))
+        textBox(self._fs, (x, y, self.w, self.h))
         if self.stroke != NO_COLOR and self.strokeWidth:
             setStrokeColor(self.stroke, self.strokeWidth)
             fill(None)
@@ -111,12 +134,15 @@ class TextBox(Element):
      
 class Text(Element):
     def __init__(self, fs, eId=None, font=None, fontSize=None, fill=NO_COLOR):
-        self.fs = fs
+        self._fs = fs
         self.font = font
         self.fontSize = fontSize
         self.fill = fill
         self.eId = eId # Unique element id.
-    
+
+    def getFs(self):
+        return self._fs
+
     def draw(self, page, x, y):
         u"""Draw the formatted text. Since this is not a text column, but just a 
         typeset text line, background and stroke of a text column needs to be drawn elsewere."""
@@ -126,7 +152,7 @@ class Text(Element):
         if self.fontSize is not None:
             fontSize(self.fontSize)
         # TODO: replace by a more generic replacer. How to do that with FormattedStrings?
-        s = ('%s' % self.fs).replace('#?#', `page.pageNumber+1`)
+        s = ('%s' % self._fs).replace('#?#', `page.pageNumber+1`)
         text(s, (x, y))
                                              
 class Rect(Element):
@@ -296,9 +322,8 @@ class Grid(Element):
             setStrokeColor(style.gridStroke, style.gridStrokeWidth)
             # TODO: Drawbot align and fill don't work properly now.
             M = 16
-            fs = FormattedString('', font='Verdana', align='right', fontSize=M/2,     
-                stroke=None, fill=(style.gridStroke, style.gridStroke, 
-                style.gridStroke))
+            fs = FormattedString('', font='Verdana', align='right', fontSize=M/2,
+                stroke=None, fill=style.gridStroke)
             x = px + style.ml
             index = 0
             y = style.h - style.mt - py
@@ -308,7 +333,7 @@ class Grid(Element):
                 lineTo((x, style.h))
                 moveTo((x+style.cw, 0))
                 lineTo((x+style.cw, style.h))
-                drawPath()        
+                drawPath()
                 text(fs+`index`, (x + M*0.3, y + M/4))
                 index += 1
                 x += style.cw + style.g
@@ -339,7 +364,7 @@ class BaselineGrid(Element):
         # Format of line numbers.
         # TODO: Drawbot align and fill don't work properly now.
         fs = FormattedString('', font='Verdana', align='right', fontSize=M/2, 
-            stroke=None, fill=(style.gridStroke, style.gridStroke, style.gridStroke))
+            stroke=None, fill=style.gridStroke)
         while y > style.mb:
             setFillColor(None)
             setStrokeColor(style.gridStroke, style.gridStrokeWidth)
@@ -350,4 +375,4 @@ class BaselineGrid(Element):
             text(fs + `line`, (M-2, y-M*0.6))  
             text(fs + `line`, (page.w - M-4, y-M*0.6))  
             line += 1 # Increment line index.   
-            y -= style.baselineGrid # Next vertical line position.
+            y -= style.baselineGrid # Next vertical line position of baseline grid.

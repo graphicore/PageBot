@@ -39,7 +39,7 @@ CH = 6*BASELINE_GRID - G # Approx. square. Fit with baseline.
 LIST_INDENT = U*0.8 # Indent for bullet lists
 # Display option
 SHOW_GRID = True
-SHOW_BASELINEGRID = True
+SHOW_BASELINE_GRID = True
 GRID_FILL = (0.8, 0.9, 1)
 GRID_STROKE = (0.8, 0.8, 0.9)
 GRID_STROKEWIDTH = 1
@@ -62,7 +62,7 @@ P_TRACK = 0.030
 LANGUAGE = 'en'
 PAGENUMBER_MARKER = '#?#'
 FIRSTPAGE = 1
-NO_COLOR= -1
+NO_COLOR = -1
 MISSING_IMAGE_FILL = 0.5
  
 def getRootStyle():
@@ -76,19 +76,18 @@ def getRootStyle():
         g = G, # Gutter
         # Grid
         showGrid = SHOW_GRID,
+        showBaselineGrid = SHOW_BASELINE_GRID,
         gridFill = GRID_FILL,
         gridStroke = GRID_STROKE, # Stroke of grid lines in part of a template.
         gridStrokeWidth = GRID_STROKEWIDTH,
         missingImageFill = MISSING_IMAGE_FILL,
-        baselineGrid = BASELINE_GRID,
-        baselineGridStroke = GRID_STROKEWIDTH,
-        gridfit = False,
         # Typographic defaults
         font = FONT, # Default is to avoid existing font and fontSize in the graphic state.
         fallbackFont = FALLBACK_FONT,
         fontSize = FONTSIZE, # Font size in points
-        tracking = 0, # Tracking of the current font/fontSize
-        align = LEFT_ALIGN, # Alignment, one if ('left', 'justified', 'right')
+        tracking = 0, # Absloute tracking value.
+        rTracking = 0, # Tracking as factor of the fontSize.
+        align = LEFT_ALIGN, # Alignment, one if ('left', 'justified', 'cemter'. 'right')
         # Set tabs,tuples of (float, alignment) Aligment can be “left”, “center”, “right” 
         # or any other character. If a character is provided the alignment will be right and 
         # centered on the specified character.
@@ -107,7 +106,9 @@ def getRootStyle():
         # smcp, ss01, ss02, ss03, ss04, ss05, ss06, ss07, ss08, ss09, ss10, ss11, ss12, ss13, ss14, 
         # ss15, ss16, ss17, ss18, ss19, ss20, subs, sups, swsh, titl, tnum
         openTypeFeatures = OPENTYPE_FEATURES, 
-
+        # Vertical spacing
+        baselineGrid = BASELINE_GRID,
+        baselineGridStroke = GRID_STROKEWIDTH,
         leading = LEADING, # Relative factor to fontSize.
         rLeading = RLEADING, # Relative factor to fontSize.
         paragraphTopSpacing = None,
@@ -119,7 +120,10 @@ def getRootStyle():
         baselineShift = None, # Absolute baseline shift in points. Positive value is upward.
         rBaselineShift = None, # Relative baseline shift, multiplyer to current self.fontSize 
         needsAbove = 0, # Check if this space is available above, to get amount of text lines above headings.
-        needsBelow = 0, # Check if this space is available below, to get amount of text lines below headings.
+        rNeedsAbove = 0, # Check if this relative fontSize space is available above, to get amount of text lines above headings.
+        needsBelow = 0, # Check if this point space is available below, to get amount of text lines below headings.
+        rNeedsBelow = 0, # Check if this relative fontSize space is available below, to get amount of text lines below headings.
+        # Language and hyphenation
         language = LANGUAGE,
         hyphenation = True,
         stripWhiteSpace = ' ', # Strip pre/post white space from e.text and e.tail and add single space
@@ -131,7 +135,6 @@ def getRootStyle():
         cmykFill = NO_COLOR, # Flag to ignore, None is valid value for color.
         cmykStroke = NO_COLOR, # Flag to ignore, None is valid value for color.
         strokeWidth = None, # Stroke thickness
-
     )
   
                 

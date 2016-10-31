@@ -1,5 +1,11 @@
 # -*- coding: UTF-8 -*-
-              
+
+import weakref
+import copy
+from style import NO_COLOR
+from pagebot import cr2p, cp2p
+from elements import Grid, BaselineGrid, Image, TextBox, Text
+           
 class Page(object):
  
     DEFAULT_STYLE = 'page'
@@ -9,7 +15,7 @@ class Page(object):
         self.w = w # Page width
         self.h = h # Page height
         self.pageNumber = pageNumber
-        self.setTemplate(template)
+        self.setTemplate(template) # Create storage of elements and copy template elements.
         
     def __repr__(self):
         return '[%s w:%d h:%d elements:%d elementIds:%s]' % (self.__class__.__name__, self.w, self.h, len(self.elements), self.elementIds.keys())
@@ -24,7 +30,7 @@ class Page(object):
             # Copy elements from the template
             for element, (x, y) in template.elements:
                 self.place(copy.copy(element), x, y)
-            
+
     def place(self, e, x, y):
         u"""Place the elememt on position (x, y). Note that the elements do not know that they
         have a position by themselves. This also allows to place the same element on multiple
@@ -40,7 +46,7 @@ class Page(object):
             assert e.eId not in self.elementIds
             self.elementIds[e.eId] = e
             
-    def findElement(self, eId):
+    def getElement(self, eId):
         u"""Answer the page element, if it has a unique element Id."""
         return self.elementIds.get(eId)
 
@@ -167,9 +173,9 @@ class Template(Page):
     u"""Template is a special kind of Page class. Possible the draw in 
     the same way. Difference is that templates cannot contain other templates."""
     
-    def __init__(self, w, h, style=None):
-        self.w = w # Page width
-        self.h = h # Page height
+    def __init__(self, style):
+        self.w = style.w # Page width
+        self.h = style.h # Page height
         self.elements = [] # Sequential drawing order of Element instances.
         self.elementIds = {} # Stored elements by their unique id, so they can be altered later, before rendering starts.
         self.placed = {} # Placement by (x,y) key. Value is a list of elements.
@@ -181,4 +187,3 @@ class Template(Page):
     def draw(self, page, x, y):
         # Templates are supposed to be copied from by Page, never to be drawing themselves.
         pass 
-                  
