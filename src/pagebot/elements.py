@@ -36,6 +36,10 @@ class Element(object):
         u"""Default is that elements don't contain text."""
         return None
 
+    def isFlow(self):
+        u"""Default is that elements are not part of a flow."""
+        return False
+
 class Galley(Element):
     u"""A Galley is sticky sequential flow of elements, where the parts can have 
     different widths (like headlines, images and tables) or responsive width, such as images 
@@ -50,6 +54,11 @@ class Galley(Element):
         self._elements = elements
         self._footnotes = []
         self.eId = eId # Optional element id.
+
+    def __repr__(self):
+        if self.isFlow:
+            return '[%s %s-->(%s,%s)]' % (self.__class__.__name__, self.eId, self.nextBox, self.nextPage)
+        return '[%s %s]' % (self.__class__.__name__, self.eId)
 
     def getElements(self):
         u"""Since this is a recursive element, we can answer a list of elements."""
@@ -110,6 +119,14 @@ class TextBox(Element):
 
     def getFs(self):
         return self.fs
+
+    def isFlow(self):
+        u"""This is a flow, if the two next parameters are filled."""
+        return self.nextBox is not None and self.nextPage is not None
+
+    def _get_next(self):
+        return self.nextBox, self.nextPage
+    next = property(_get_next)
 
     def append(self, s, style=None):
         self.fs += getFormattedString(s, style)

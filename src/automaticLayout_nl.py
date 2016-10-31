@@ -59,7 +59,7 @@ MAIN_FLOW = 'main' # ELement id of the text box on pages the hold the main text 
 FILENAME = 'automaticLayout_nl.md' # 'automaticLayout_nl.md'
 PAGENUMBER = '#?#'
 NO_COLOR= -1
-BOX_COLOR = NO_COLOR #0.9 # Debug color for textbox columns.
+BOX_COLOR = 0.9 #NO_COLOR #0.9 # Debug color for textbox columns.
 MISSING_IMAGE_FILL = 0.5
 
 # Tracking presets

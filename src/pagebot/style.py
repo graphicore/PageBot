@@ -40,9 +40,12 @@ LIST_INDENT = U*0.8 # Indent for bullet lists
 # Display option
 SHOW_GRID = True
 SHOW_BASELINE_GRID = True
+SHOW_FLOW_CONNECTIONS = True
 GRID_FILL = (0.8, 0.9, 1)
 GRID_STROKE = (0.8, 0.8, 0.9)
 GRID_STROKEWIDTH = 1
+FLOW_CONNECTION_STROKE = (1, 0, 0, 0.9)
+FLOW_CONNECTION_STROKEWIDTH = 3
 # Text measures
 LEADING = BASELINE_GRID
 RLEADING = 0
@@ -80,6 +83,11 @@ def getRootStyle():
         gridFill = GRID_FILL,
         gridStroke = GRID_STROKE, # Stroke of grid lines in part of a template.
         gridStrokeWidth = GRID_STROKEWIDTH,
+        # Draw connection arrows between the flow boxes on a page.
+        showFlowConnections = SHOW_FLOW_CONNECTIONS, # Draw arrows between the flows for debugging.
+        flowConnectionStroke = FLOW_CONNECTION_STROKE,
+        flowConnectionStrokeWidth = FLOW_CONNECTION_STROKEWIDTH,
+        # Image stuff
         missingImageFill = MISSING_IMAGE_FILL,
         # Typographic defaults
         font = FONT, # Default is to avoid existing font and fontSize in the graphic state.
@@ -137,4 +145,3 @@ def getRootStyle():
         strokeWidth = None, # Stroke thickness
     )
   
-                
