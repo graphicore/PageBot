@@ -29,12 +29,12 @@ class Page(object):
         self.placed = {} # Placement by (x,y) key. Value is a list of elements.
         self.template = template # Keep in order to clone pages or if addition info is needed.
         if template is not None:
-            # Copy elements from the template
+            # Copy elements from the template and put them in the designated positions.
             for element, (x, y) in template.elements:
                 self.place(copy.copy(element), x, y)
 
     def place(self, e, x, y):
-        u"""Place the elememt on position (x, y). Note that the elements do not know that they
+        u"""Place the element on position (x, y). Note that the elements do not know that they
         have a position by themselves. This also allows to place the same element on multiple
         position on the same page or multiple pages (as for template elements)."""
         # Store the element by position. There can be multiple elements on the same position.

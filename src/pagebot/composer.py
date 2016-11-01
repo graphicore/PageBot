@@ -33,7 +33,6 @@ class Composer(object):
                 fs = overflow
                 if len(fs):
                     # Overflow in this text box, find new from (page, tbFlow)
-                    break
                     newPage, tb = page.getNextFlowBox(tb)
                     assert tb is not None # If happens, its a mistake in one of the templates.
                 else:

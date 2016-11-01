@@ -41,8 +41,8 @@ LIST_INDENT = U*0.8 # Indent for bullet lists
 SHOW_GRID = True
 SHOW_BASELINE_GRID = True
 SHOW_FLOW_CONNECTIONS = True
-GRID_FILL = (0.8, 0.9, 1)
-GRID_STROKE = (0.8, 0.8, 0.9)
+GRID_FILL = (0.8, 0.9, 0.8)
+GRID_STROKE = (0.8, 0.8, 0.8)
 GRID_STROKEWIDTH = 1
 FLOW_CONNECTION_STROKE1 = (0.2, 0.5, 0.1, 0.8)
 FLOW_CONNECTION_STROKE2 = (1, 0, 0, 0.8)
@@ -61,10 +61,12 @@ LEFT_ALIGN = 'left'
 RIGHT_ALIGN = 'right'
 CENTER = 'center'
 JUSTIFIED = 'justified'
- # Tracking presets
+
+# Tracking presets
 H1_TRACK = H2_TRACK = 0.015
 H3_TRACK = 0.030 # Tracking as relative factor to font size.
 P_TRACK = 0.030
+
 # Language settings
 LANGUAGE = 'en'
 PAGENUMBER_MARKER = '#?#'
