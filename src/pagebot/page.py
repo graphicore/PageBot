@@ -205,20 +205,24 @@ class Page(object):
                 flows[element.next] = [element]
         return flows
 
-    def drawArrow(self, xs, ys, xt, yt, fillC, strokeC):
+    def drawArrow(self, xs, ys, xt, yt, onText=1):
         u"""Draw curved arrow marker between the two points."""
         style = self.parent.getRootStyle()
         fms = style.flowMarkerSize
         fmf = style.flowCurvatureFactor
-        setStrokeColor(strokeC, style.flowConnectionStrokeWidth)
-        setFillColor(fillC)
+        if onText == 1:
+            c = style.flowConnectionStroke2
+        else:
+            c = style.flowConnectionStroke1
+        setStrokeColor(c, style.flowConnectionStrokeWidth)
+        setFillColor(style.flowMarkerFill)
         oval(xs - fms, ys - fms, 2 * fms, 2 * fms)
         xm = (xt + xs)/2
         ym = (yt + ys)/2
-        xb1 = xm + (yt - ys) * fmf
-        yb1 = ym - (xt - xs) * fmf
-        xb2 = xm - (yt - ys) * fmf
-        yb2 = ym + (xt - xs) * fmf
+        xb1 = xm + onText * (yt - ys) * fmf
+        yb1 = ym - onText * (xt - xs) * fmf
+        xb2 = xm - onText * (yt - ys) * fmf
+        yb2 = ym + onText * (xt - xs) * fmf
         setFillColor(None)
         newPath()
         moveTo((xs, ys))
@@ -232,20 +236,17 @@ class Page(object):
         style = self.parent.getRootStyle()
         if not style.showFlowConnections:
             return
-        fillC = style.flowMarkerFill
-        strokeC1 = style.flowConnectionStroke1
-        strokeC2 = style.flowConnectionStroke2
         for seq in self.getFlows().values():
             # For all the floq sequences found in the page, draw flow arrows
             tbStart, (startX, startY) = self.getElementPos(seq[0].eId)
             for tbTarget in seq[1:]:
                 tbTarget, (targetX, targetY) = self.getElementPos(tbTarget.eId)
-                self.drawArrow(startX, startY+tbStart.h, startX+tbStart.w, startY, fillC, strokeC1)
-                self.drawArrow(startX+tbStart.w, startY, targetX, targetY + tbTarget.h, fillC, strokeC2)
+                self.drawArrow(startX, startY+tbStart.h, startX+tbStart.w, startY, -1)
+                self.drawArrow(startX+tbStart.w, startY, targetX, targetY + tbTarget.h, 1)
                 tbStart = tbTarget
                 startX = targetX
                 startY = targetY
-            self.drawArrow(startX, startY + tbStart.h, startX + tbStart.w, startY, fillC, strokeC1)
+            self.drawArrow(startX, startY + tbStart.h, startX + tbStart.w, startY, -1)
 
     def draw(self):
         for element, (x, y) in self.elements:
