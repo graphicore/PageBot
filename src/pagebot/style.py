@@ -1,4 +1,30 @@
 # -*- coding: UTF-8 -*-
+#-----------------------------------------------------------------------------
+#     Copyright (c) 2016+ Type Network, www.typenetwork.com, www.pagebot.io
+#     Licensed under MIT conditions
+#     Made for usage in Drawbot, www.drawbot.com
+#
+#     P A G E B O T
+#
+# -----------------------------------------------------------------------------
+#
+#     style.py
+#
+# Basic layout measures
+U = 7
+BASELINE_GRID = 2*U
+
+# Display option
+SHOW_GRID = True
+SHOW_BASELINE_GRID = True
+SHOW_FLOW_CONNECTIONS = True
+
+NO_COLOR = -1
+
+LEFT_ALIGN = 'left'
+RIGHT_ALIGN = 'right'
+CENTER = 'center'
+JUSTIFIED = 'justified'
 
 class Style(object):
     u"""Container for style instances."""
@@ -25,22 +51,6 @@ class Style(object):
             return getattr(self, name)
         return default
 
-# Basic layout measures 
-U = 7
-BASELINE_GRID = 2*U
-
-# Display option
-SHOW_GRID = True
-SHOW_BASELINE_GRID = True
-SHOW_FLOW_CONNECTIONS = True
-
-NO_COLOR = -1
-
-LEFT_ALIGN = 'left'
-RIGHT_ALIGN = 'right'
-CENTER = 'center'
-JUSTIFIED = 'justified'
-
 def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
         showFlowConnection=SHOW_FLOW_CONNECTIONS):
     u"""Answer the main root style tha contains all default style attributes of Pagebot.
@@ -53,7 +63,6 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
     # Some calculations to show dependecies.
     baselineGrid = 2*u
     leftIndent = 0.8*u
-    noColor = NO_COLOR
 
     return Style( # Answer the default root style.
 
@@ -148,11 +157,11 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
         firstPage = 1, # First page number of the docjment.
 
         # Color
-        NO_COLOR = noColor, # Add no-color flag (-1) to make differenve with "color" None.
+        NO_COLOR = NO_COLOR, # Add no-color flag (-1) to make differenve with "color" None.
         fill = 0, # Default is black
         stroke = None, # Default is to have no stroke.
-        cmykFill = noColor, # Flag to ignore, None is valid value for color.
-        cmykStroke = noColor, # Flag to ignore, None is valid value for color.
+        cmykFill = NO_COLOR, # Flag to ignore, None is valid value for color.
+        cmykStroke = NO_COLOR, # Flag to ignore, None is valid value for color.
         strokeWidth = None, # Stroke thickness
 
         # Constants for standardized usage of alignment in FormattedString

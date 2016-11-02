@@ -1,5 +1,14 @@
 # -*- coding: UTF-8 -*-
-
+#-----------------------------------------------------------------------------
+#     Copyright (c) 2016+ Type Network
+#     Licensed under MIT conditions
+#
+#     P A G E B O T
+#
+# -----------------------------------------------------------------------------
+#
+#     __init__.py
+#
 import re
 from drawBot import FormattedString, cmykFill, fill, cmykStroke, stroke, strokeWidth
 from style import NO_COLOR

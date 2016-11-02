@@ -13,6 +13,18 @@ from markdown.extensions.nl2br import Nl2BrExtension
 from markdown.extensions.footnotes import FootnoteExtension
 
 import literature
+# -*- coding: UTF-8 -*-
+#-----------------------------------------------------------------------------
+#     Copyright (c) 2016+ Type Network, www.typenetwork.com, www.pagebot.io
+#     Licensed under MIT conditions
+#     Made for usage in Drawbot, www.drawbot.com
+#
+#     P A G E B O T
+#
+# -----------------------------------------------------------------------------
+#
+#     typesetter.py
+#
 reload(literature)
 from literature import LiteratureExtension
 

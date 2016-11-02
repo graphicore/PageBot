@@ -1,14 +1,15 @@
-# -----------------------------------------------------------------------------
-#     Copyright (c) 2016+ Type Network
-#     Icensed under MIT conditions
+#-----------------------------------------------------------------------------
+#     Copyright (c) 2016+ Type Network, www.typenetwork.com, www.pagebot.io
+#     Licensed under MIT conditions
+#     Made for usage in Drawbot, www.drawbot.com
 #
 #     P A G E B O T
 #
 # -----------------------------------------------------------------------------
 #
-#     automaticLayout_nl.py
+#     automaticLayout.py
 #
-#     This scripts  generates an article in Dustch about automatic the apporach to
+#     This script generates an article in Dustch the apporach to
 #     generate automatic layouts, using Galley, Typesetter and Composer classes.
 #
 import pagebot.style
@@ -183,4 +184,3 @@ def makeDocument():
 d = makeDocument()
 d.export('export/AutomaticLayout.pdf') 
 
-    
