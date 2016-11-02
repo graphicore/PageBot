@@ -10,9 +10,10 @@
 #
 #     document.py
 #
+import copy
 from pagebot.page import Page, Template
 from pagebot.style import Style
-from drawBot import newPage, saveImage
+from drawBot import newPage, saveImage, installedFonts, installFont
             
 class Document(object):
     u"""Container of Page instance, Style instances and Template instances."""
@@ -79,6 +80,17 @@ class Document(object):
         set of styles while processing specific pages. It is the responsibility of the caller to save the existing
         style set."""
         self.styles = styles
+
+    def getInstalledFonts(self):
+        u"""Answer the list of font names, currently installed in the application."""
+        return installedFonts()
+
+    def installFont(self, path):
+        u"""Install a font with a given path and the postscript font name will be returned. The postscript
+        font name can be used to set the font as the active font. Fonts are installed only for the current
+        process. Fonts will not be accessible outside the scope of drawBot.
+        All installed fonts will automatically be uninstalled when the script is done."""
+        return installFont(path)
 
     def __repr__(self):
         return '[Document: %s Pages: %d]' % (self.title, len(self))

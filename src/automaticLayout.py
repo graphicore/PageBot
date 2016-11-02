@@ -36,6 +36,25 @@ import pagebot.elements
 reload(pagebot.elements)
 from pagebot.elements import Galley
 
+import pagebot.gxtools.gxmutator
+reload(pagebot.gxtools.gxmutator)
+from pagebot.gxtools.gxmutator import generateInstance
+
+FONT_LOCATIONS = {
+    'Promise-BoldCondensed': {"wght": 0.75, "wdth": -0.5},
+    'Promise-Light': {"wght": 0, "wdth": 1},
+    'Promise-Regular': {"wght": 0.25, "wdth": 1},    
+    'Promise-Semibold': {"wght": 0.5, "wdth": 1},    
+    'Promise-Bold': {"wght": 1, "wdth": 1},
+}
+FONTS = {}
+# Install the test V-font
+if not 'Promise-Bold' in installedFonts():
+    installFont('fonts/Promise-GX.ttf')
+for name, location in FONT_LOCATIONS.items():
+    FONTS[name] = generateInstance('fonts/Promise-GX.ttf', location, targetDirectory='fonts/instances')
+
+
 # Get the default root stule.
 rs = getRootStyle()
 
@@ -80,11 +99,11 @@ H3_TRACK = 0.030 # Tracking as relative factor to font size.
 P_TRACK = 0.030
 
 if 1:
-    BOOK = 'Productus-Book'
-    BOOK_ITALIC = 'Productus-BookItalic'
-    BOLD = 'Productus-Bold'
-    SEMIBOLD = 'Productus-Semibold'
-    MEDIUM = 'Productus-Medium'
+    BOOK = FONTS['Promise-Light']
+    BOOK_ITALIC = FONTS['Promise-Light']
+    BOLD = FONTS['Promise-Bold']
+    SEMIBOLD = FONTS['Promise-Semibold']
+    MEDIUM = FONTS['Promise-Regular']
 else:
     BOOK = MEDIUM = 'Georgia'
     BOOK_ITALIC = 'Georgia-Italic'

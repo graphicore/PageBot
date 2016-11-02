@@ -18,7 +18,9 @@ from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates
 from fontTools.varLib import _GetCoordinates, _SetCoordinates
 from fontTools.varLib.models import VariationModel, supportScalar, normalizeLocation
 
-def generateInstance(varfilename, location, targetDirectory=None):
+from drawBot import installFont
+
+def generateInstance(varFileName, location, targetDirectory):
 	u"""
 	Instantiate an instance of a variation font at the specified location.
 	Keyword arguments:
@@ -34,22 +36,23 @@ def generateInstance(varfilename, location, targetDirectory=None):
 		v = int((v*1000+1000)/2)
 		instanceName += "-%s%s" % (k, v)
 	
-	outfile = os.path.splitext(varfilename)[0] + instanceName + '.ttf'
+	targetFileName = '.'.join(varFileName.split('/')[-1].split('.')[:-1]) + instanceName + '.ttf'
 	
-	if targetDirectory:
-		if not os.path.exists(targetDirectory):
-			os.makedirs(targetDirectory)
-		outfile = os.path.join(targetDirectory, outfile)
+	if not targetDirectory.endswith('/'):
+	    targetDirectory += '/'
+	if not os.path.exists(targetDirectory):
+		os.makedirs(targetDirectory)
+	outFile = targetDirectory + targetFileName
 
-	print("Loading GX font")
-	varfont = TTFont(varfilename)
+	#print("Loading GX font")
+	varfont = TTFont(varFileName)
 
 	fvar = varfont['fvar']
 	axes = {a.axisTag:(a.minValue,a.defaultValue,a.maxValue) for a in fvar.axes}
 	# TODO Round to F2Dot14?
 	location = normalizeLocation(location, axes)
 	# Location is normalized now
-	print("Normalized location:", location)
+	#print("Normalized location:", location)
 
 	gvar = varfont['gvar']
 	for glyphname,variations in gvar.variations.items():
@@ -69,10 +72,12 @@ def generateInstance(varfilename, location, targetDirectory=None):
 			#coordinates += GlyphCoordinates(var.coordinates) * scalar
 		_SetCoordinates(varfont, glyphname, coordinates)
 
-	print("Removing GX tables")
+	#print("Removing GX tables")
 	for tag in ('fvar','avar','gvar'):
 		if tag in varfont:
 			del varfont[tag]
 
-	print("Saving instance font", outfile)
-	varfont.save(outfile)
+	#print("Saving instance font", outFile)
+	varfont.save(outFile)
+	# Installing the font in Drawbot
+	return installFont(outFile)
