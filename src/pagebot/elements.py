@@ -158,7 +158,7 @@ class TextBox(Element):
             setStrokeColor(self.stroke, self.strokeWidth)
             fill(None)
             rect(x, y, self.w, self.h)
-     
+
 class Text(Element):
     def __init__(self, fs, eId=None, font=None, fontSize=None, fill=NO_COLOR):
         self._fs = fs

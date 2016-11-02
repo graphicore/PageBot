@@ -1,14 +1,21 @@
-#import os
-#import weakref
-#import fontTools
-#import copy
-#import xml.etree.ElementTree as ET
-
+# -----------------------------------------------------------------------------
+#     Copyright (c) 2016+ Type Network
+#     Icensed under MIT conditions
+#
+#     P A G E B O T
+#
+# -----------------------------------------------------------------------------
+#
+#     automaticLayout_nl.py
+#
+#     This scripts  generates an article in Dustch about automatic the apporach to
+#     generate automatic layouts, using Galley, Typesetter and Composer classes.
+#
 import pagebot.style
 reload(pagebot.style)
 from pagebot.style import getRootStyle, LEFT_ALIGN
 
-import pagebot.document # Temp different from document, while developing Galley
+import pagebot.document 
 reload(pagebot.document)
 from pagebot.document import Document
 
@@ -28,14 +35,10 @@ import pagebot.elements
 reload(pagebot.elements)
 from pagebot.elements import Galley
 
-LEFT_ALIGN = 'left'
-RIGHT_ALIGN = 'right'
-JUSTIFIED = 'justified'
-CENTER = 'center'
-
+# Get the default root stule.
 rs = getRootStyle()
 
-# Basic layout measures 
+# Basic layout measures altering the default rooT STYLE.
 rs.u = U = 7
 rs.pw = 595 # Page width 210mm, international generic fit.
 rs.ph = 11 * 72 # Page height 11", international generic fit.
@@ -57,10 +60,7 @@ rs.fontSize = 10
 rs.language = 'nl-be'
 MAIN_FLOW = 'main' # ELement id of the text box on pages the hold the main text flow.
 FILENAME = 'automaticLayout_nl.md' # 'automaticLayout_nl.md'
-PAGENUMBER = '#?#'
-NO_COLOR= -1
-BOX_COLOR = 0.9 #NO_COLOR #0.9 # Debug color for textbox columns.
-MISSING_IMAGE_FILL = 0.5
+BOX_COLOR = 0.8
 
 # Tracking presets
 H1_TRACK = H2_TRACK = 0.015
@@ -101,7 +101,7 @@ def makeDocument():
     template1.cTextBox('', 2, 0, 2, 8, flowId1, nextBox=flowId2, nextPage=0, fill=BOX_COLOR)
     template1.cTextBox('', 4, 4, 2, 4, flowId2, nextBox=flowId0, nextPage=1, fill=BOX_COLOR)
     # Create page number box. Pattern PAGENUMBER is replaced by actual page number.
-    template1.cText(PAGENUMBER, 6, 0, font=BOOK, fontSize=12, fill=BOX_COLOR)
+    template1.cText(rs.pageNumberMarker, 6, 0, font=BOOK, fontSize=12, fill=BOX_COLOR)
 
     # Template 2
     template2 = Template(rs) # Create second template. This is for the main pages.
@@ -118,7 +118,7 @@ def makeDocument():
     template2.cTextBox('', 2, 4, 2, 4, flowId1, nextBox=flowId2, nextPage=0, fill=BOX_COLOR)
     template2.cTextBox('', 4, 3, 2, 3, flowId2, nextBox=flowId0, nextPage=1, fill=BOX_COLOR)
     # Create page number box. Pattern PAGENUMBER is replaced by actual page number.
-    template2.cText(PAGENUMBER, 6, 0, font=BOOK, fontSize=12, fill=BOX_COLOR)
+    template2.cText(rs.pageNumberMarker, 6, 0, font=BOOK, fontSize=12, fill=BOX_COLOR)
    
     # Create new document with (w,h) and fixed amount of pages.
     # Make number of pages with default document size.
@@ -141,7 +141,7 @@ def makeDocument():
     
     # Spaced paragraphs.
     doc.newStyle(name='p', fontSize=rs.fontSize, font=BOOK, fill=0.1, 
-        stroke=None, tracking=P_TRACK, language=rs.language, align=LEFT_ALIGN,
+        stroke=None, tracking=P_TRACK, language=rs.language, align=rs.LEFT_ALIGN,
         leading=rs.leading, rLeading=0, hyphenation=True, 
         stripWhiteSpace=' ')
     doc.newStyle(name='b', font=SEMIBOLD, stripWhiteSpace=' ')
