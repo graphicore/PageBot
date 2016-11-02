@@ -10,8 +10,8 @@
 #
 #     document.py
 #
-from page import Page, Template
-from style import Style
+from pagebot.page import Page, Template
+from pagebot.style import Style
 from drawBot import newPage, saveImage
             
 class Document(object):
@@ -19,8 +19,7 @@ class Document(object):
     
     PAGE_CLASS = Page # Allow inherited versions of the Page class.
     TEMPLATE_CLASS = Template # Allow inherited versions of the Template class.
-    FIRST_PAGE_NUMBER = 1
-    
+
     def __init__(self, rootStyle, styles=None, title=None, pages=1, template=None):
         u"""Contains a set of Page instance and formatting methods. Allows to compose the pages
         without the need to send them directly to the output. This allows "asynchronic" page filling."""
@@ -28,7 +27,7 @@ class Document(object):
         self.w = rootStyle.w
         self.h = rootStyle.h
         self.title = title or 'Untitled'
-        self.template = template # Store as document master template if undefine in pages.
+        self.template = template # Store as document master template if undefined in pages.
         self.pages = {} # Key is pageID, often the page number. Value is Page instances.
         self.initializeStyles(rootStyle, styles)
         # Before we can do any text format (for which the graphic state needs to be set,
@@ -105,9 +104,7 @@ class Document(object):
         u"""Answer the next page of page. If it does not exist, create a new page."""
         pageNumber = page.pageNumber + nextPage
         if not pageNumber in self.pages:
-            if template is None: # If template undefined, then use current page template.
-                template = page.template or self.template
-            self.newPage(pageNumber=pageNumber, template=template)
+            self.newPage(pageNumber=pageNumber, template=self.getTemplate())
         return self.getPage(pageNumber)
           
     def makePages(self, count, w=None, h=None, template=None):
@@ -128,21 +125,29 @@ class Document(object):
         if template is None: # If template undefined, then used document master template.
             template = self.getTemplate
         if pageNumber is None:
-            if not self.pages:
-                pageNumber = self.FIRST_PAGE_NUMBER
+            if not self.pages: # If not pages yet, start with the first page number defined in root style.
+                rs = self.getRootStyle()
+                pageNumber = rs.firstPageNumber
             else:
                 pageNumber = max(self.pages.keys())+1
         assert not pageNumber in self.pages # Make sure that we don't accidentally overwite existing pages.
-        page = self.PAGE_CLASS(self, w or self.w, h or self.h, pageNumber, template)
+        page = self.PAGE_CLASS(self, w or self.w, h or self.h, pageNumber=pageNumber, template=template)
         self.pages[pageNumber] = page
         return page
   
     def getStyle(self, name):
         return self.styles[name]
         
-    def getTemplate(self, name):
-        return self.templates[name]
-        
+    def getTemplate(self):
+        u"""Answer the best choice of template by answering the document default template, as it is
+        defined at Document creation. If it was omitted at that time, a default class template is used."""
+        template = self.template # If template undefined, then use defined page template.
+        if template is None: # Still None (not defined at Document creation), use to fallback default template.
+            boxId = 'main'
+            template = self.TEMPLATE_CLASS(self.getRootStyle())
+            template.cTextBox(0, 0, 4, 8, boxId, nextBox=boxId, nextPage=1) # Simple template with 1 column.
+        return template
+
     def addStyle(self, name, style):
         u"""Add the style to the self.styles dictionary."""
         assert not name in self.styles # Make sure that styles don't get overwritten. Remove them first.

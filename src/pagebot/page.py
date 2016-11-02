@@ -14,9 +14,9 @@
 import weakref
 import copy
 from drawBot import stroke, newPath, drawPath, moveTo, lineTo, strokeWidth, oval, fill, curveTo
-from style import NO_COLOR
+from pagebot.style import NO_COLOR
 from pagebot import cr2p, cp2p, setFillColor, setStrokeColor
-from elements import Grid, BaselineGrid, Image, TextBox, Text, Rect, Line, Oval
+from pagebot.elements import Grid, BaselineGrid, Image, TextBox, Text, Rect, Line, Oval
 
 class Page(object):
  
@@ -30,7 +30,7 @@ class Page(object):
         self.setTemplate(template) # Create storage of elements and copy template elements.
         
     def __repr__(self):
-        return '[%s w:%d h:%d elements:%d elementIds:%s]' % (self.__class__.__name__, self.w, self.h, len(self.elements), self.elementIds.keys())
+        return '[%s %d w:%d h:%d elements:%d elementIds:%s]' % (self.__class__.__name__, self.pageNumber, self.w, self.h, len(self.elements), self.elementIds.keys())
             
     def setTemplate(self, template):
         u"""Clear the elements from the page and set the template. Copy the elements."""
@@ -95,14 +95,15 @@ class Page(object):
     def getNextFlowBox(self, tb, makeNew=False):
         if tb.nextPage:
             page = self.nextPage(tb.nextPage, makeNew)
-            #print 'bbbbbb', tb.eId, tb.nextBox, tb.nextPage
+            print('bbbbbb', tb.eId, tb.nextBox, tb.nextPage)
             assert page is not None
             tb = page.getElement(tb.nextBox)
             assert tb is not None and not len(tb)
         else:
             page = self
-            #print 'aaaaaaa', tb.eId, tb.nextBox
+            print('aaaaaaa', page, tb.eId, tb.nextBox)
             tb = self.getElement(tb.nextBox)
+            print('ssssss', page, tb.eId, tb.nextBox)
             # Make sure that this one is empty, otherwise mistake in template
             assert not len(tb)
         return page, tb

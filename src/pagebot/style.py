@@ -62,7 +62,7 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
     """
     # Some calculations to show dependencies.
     baselineGrid = 2*u
-    leftIndent = 0.8*u
+    listIndent = 0.8*u # Indent of lists. Needs to be the same as tab, to position right after bullets
     gutter = u
 
     return Style( # Answer the default root style.
@@ -93,7 +93,7 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
 
         # Grid stuff
         showGrid = showGrid, # Flag to show the grid in output.
-        gridFill = (0.8, 0.9, 0.8), # Fill color for (cw, ch) squares.
+        gridFill = (178/255.0, 200/255.0, 230/255.0, 0.9), # Fill color for (cw, ch) squares.
         gridStroke = (0.8, 0.8, 0.8), # Stroke of grid lines in part of a template.
         gridStrokeWidth = 1, # Line thickness of the grid.
         # Baseline grid
@@ -101,8 +101,8 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
         baselineGridStroke = 1, # Line thickness of baselines grid.
         # Draw connection arrows between the flow boxes on a page.
         showFlowConnections = showFlowConnection, # Flag to draw arrows between the flows for debugging.
-        flowConnectionStroke1 = (0.2, 0.5, 0.1, 0.8), # Stroke color of flow lines inside column,
-        flowConnectionStroke2 = (1, 0, 0, 0.8), # Stroke color of flow lines between columns.
+        flowConnectionStroke1 = (0.2, 0.5, 0.1, 1), # Stroke color of flow lines inside column,
+        flowConnectionStroke2 = (1, 0, 0, 1), # Stroke color of flow lines between columns.
         flowConnectionStrokeWidth = 2, # Line width of curved flow lines.
         flowMarkerFill = (0.8, 0.8, 0.8, 0.5), # Fill of flow curve marker.
         flowMarkerSize = 8, # Size of flow marker circle.
@@ -123,8 +123,8 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
         # Set tabs,tuples of (float, alignment) Alignment can be “left”, “center”, “right”
         # or any other character. If a character is provided the alignment will be right and 
         # centered on the specified character.
-        listTabs = [(leftIndent, LEFT_ALIGN)], # Default indent for bullet lists. Copy onto style.tabs for usage.
-        LIST_INDENT = leftIndent, # Indent for bullet lists, Copy on style.indent for usage in list related styles.
+        listTabs = [(listIndent, LEFT_ALIGN)], # Default indent for bullet lists. Copy onto style.tabs for usage.
+        listIndent = listIndent, # Indent for bullet lists, Copy on style.indent for usage in list related styles.
         tabs = None, 
         firstLineIndent = 0, # Indent of first paragraph in a text tag.
         rFirstLineIndent = 0, # First line indent as factor if font size.
@@ -167,7 +167,9 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
 
         # Paging
         pageNumberMarker = '#??#', # Text pattern that will be replaced by current page number.
-        firstPage = 1, # First page number of the document.
+        # First page number of the document. Note that “page numbers” can be string too, as long as pages
+        # can define what is “next page”, when referred to by a flow.
+        firstPage = 1,
 
         # Color
         NO_COLOR = NO_COLOR, # Add no-color flag (-1) to make difference with "color" None.

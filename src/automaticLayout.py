@@ -66,10 +66,10 @@ else: # NL version of the article.
     FILENAME = 'automaticLayout_nl.md'
 
 MAIN_FLOW = 'main' # ELement id of the text box on pages the hold the main text flow.
-BOX_COLOR = 0.8
+BOX_COLOR = (0.8, 0.8, 0.8, 0.4)
 
 # Tracking presets
-H1_TRACK = H2_TRACK = 0.015
+H1_TRACK = H2_TRACK = 0.015 # 1/1000 of fontSize, multiplier factor.
 H3_TRACK = 0.030 # Tracking as relative factor to font size.
 P_TRACK = 0.030
 

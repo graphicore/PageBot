@@ -37,7 +37,6 @@ class Composer(object):
         # Keeping overflow of text boxes here while iterating.
         assert elements is not None # Otherwise we did not get a galley here.
         for element in elements:
-            break
             fs = element.getFs()
             if fs is None: # This is a non-text element. Try to find placement.
                 self.tryPlacement(element, page)
@@ -47,12 +46,12 @@ class Composer(object):
             for n in range(10):
                 overflow = tb.append(fs)
                 if fs == overflow:
-                    print u'NOT ABLE TO PLACE %s' % overflow
+                    print(u'NOT ABLE TO PLACE %s' % overflow)
                     break
                 fs = overflow
                 if len(fs):
                     # Overflow in this text box, find new from (page, tbFlow)
-                    newPage, tb = page.getNextFlowBox(tb)
+                    page, tb = page.getNextFlowBox(tb)
                     assert tb is not None # If happens, its a mistake in one of the templates.
                 else:
                     break

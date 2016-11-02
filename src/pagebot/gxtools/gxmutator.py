@@ -11,12 +11,12 @@
 #
 #     gxmutator.py
 #
+import os
 from fontTools.misc.py23 import *
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates
 from fontTools.varLib import _GetCoordinates, _SetCoordinates
 from fontTools.varLib.models import VariationModel, supportScalar, normalizeLocation
-import os
 
 def generateInstance(varfilename, location, targetDirectory=None):
 	u"""
@@ -41,7 +41,7 @@ def generateInstance(varfilename, location, targetDirectory=None):
 			os.makedirs(targetDirectory)
 		outfile = os.path.join(targetDirectory, outfile)
 
-	print "Loading GX font"
+	print("Loading GX font")
 	varfont = TTFont(varfilename)
 
 	fvar = varfont['fvar']
@@ -49,7 +49,7 @@ def generateInstance(varfilename, location, targetDirectory=None):
 	# TODO Round to F2Dot14?
 	location = normalizeLocation(location, axes)
 	# Location is normalized now
-	print "Normalized location:", location
+	print("Normalized location:", location)
 
 	gvar = varfont['gvar']
 	for glyphname,variations in gvar.variations.items():
@@ -69,10 +69,10 @@ def generateInstance(varfilename, location, targetDirectory=None):
 			#coordinates += GlyphCoordinates(var.coordinates) * scalar
 		_SetCoordinates(varfont, glyphname, coordinates)
 
-	print "Removing GX tables"
+	print("Removing GX tables")
 	for tag in ('fvar','avar','gvar'):
 		if tag in varfont:
 			del varfont[tag]
 
-	print "Saving instance font", outfile
+	print("Saving instance font", outfile)
 	varfont.save(outfile)

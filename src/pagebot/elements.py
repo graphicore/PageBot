@@ -15,9 +15,9 @@ import copy
 from drawBot import FormattedString, textSize, stroke, strokeWidth, fill, font, fontSize, text, \
     newPath, drawPath, moveTo, lineTo, line, rect, oval, save, scale, image, textOverflow, \
     textBox, hyphenation, restore, imageSize
-from style import NO_COLOR
 from pagebot import getFormattedString, setFillColor, setStrokeColor
-       
+from pagebot.style import NO_COLOR
+
 class Element(object):
     
     def __repr__(self):

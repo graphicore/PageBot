@@ -25,13 +25,13 @@ import literature
 #
 #     typesetter.py
 #
-import literature
-reload(literature)
-from literature import LiteratureExtension
+import pagebot.literature
+reload(pagebot.literature)
+from pagebot.literature import LiteratureExtension
 
-import elements
-reload(elements)
-from elements import Galley, Image
+import pagebot.elements
+reload(pagebot.elements)
+from pagebot.elements import Galley, Image
 
 class Typesetter(object):
     
