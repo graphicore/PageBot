@@ -136,7 +136,8 @@ class Document(object):
         return page
   
     def getStyle(self, name):
-        return self.styles[name]
+        u"""Answer the names style. Answer None if it does not exist."""
+        return self.styles.get(name)
         
     def getTemplate(self):
         u"""Answer the best choice of template by answering the document default template, as it is

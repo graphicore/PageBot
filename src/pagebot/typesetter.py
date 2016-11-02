@@ -8,6 +8,8 @@ import pagebot
 reload(pagebot)
 from pagebot import getFormattedString, getMarker
 
+from drawBot import textBox
+
 import markdown
 from markdown.extensions.nl2br import Nl2BrExtension
 from markdown.extensions.footnotes import FootnoteExtension
@@ -164,48 +166,60 @@ class Typesetter(object):
         return self.gState[-1]
 
     def typesetNode(self, node, style):
+        u"""Recursively typeset the node, using style. Style can be None, in which case it should be not
+        pushed and popped. If there is a valid style, push it on the graphics state and answer a merged
+        style with the one that was on top before. This way automatic cascading values are in the style
+        resulting the push."""
 
-        style = self.pushStyle(style)        
-        tb = self.getTextBox(style)
+        if style is not None:
+            style = self.pushStyle(style)
+        tb = self.getTextBox(style) # Style van be None
         
         nodeText = node.text
         if nodeText is not None:
-            if style.stripWhiteSpace:
-                nodeText = nodeText.strip() #+ style.stripWhiteSpace
-            if nodeText: # Anythong left to add?
-                #print node.tag, `node.text`
-                tb.append(getFormattedString(nodeText, style))
+            if style is not None and style.stripWhiteSpace is not None:
+                # If there is a style and if the replacement is not None.
+                nodeText = nodeText.strip() + style.stripWhiteSpace
+            if nodeText: # Any text left to add?
+                tb.append(getFormattedString(nodeText, style)) # If style is None, just add plain string.
             
         # Type set all child node in the current node, by recursive call.
         for child in node:
             hook = 'node_'+child.tag
+            style = self.document.getStyle(child.tag)
+            if style is not None: # Only push if we found a valid style for this tag.
+                style = self.pushStyle(style)
             # Method will handle the styled body of the element, but not the tail.
-            if hasattr(self, hook): 
-                getattr(self, hook)(child, style)
+            if hasattr(self, hook):
+                getattr(self, hook)(child, style) # Style can be None.
                 childTail = child.tail
                 if childTail is not None:
-                    if style.stripWhiteSpace:
-                        childTail = childTail.strip() #+ style.stripWhiteSpace
+                    if style is not None and style.stripWhiteSpace is not None:
+                        # If there is a style and if the replacement is not None.
+                        childTail = childTail.strip() + style.stripWhiteSpace
                     if childTail: # Anything left to add?
-                        #print child.tag, `child.tail`
-                        tb.append(getFormattedString(childTail, style))
+                        tb.append(getFormattedString(childTail, style))  # If style is None, just add plain string.
                 
             else: # If no method hook defined, then just solve recursively.
                 self.typesetNode(child, style)
+            if style is not None: # Pop style only if it was pushed before.
+                self.popStyle()
+
+        # Restore the graphic state at the end of the element content processing to the
+        # style of the parent in order to process the tail text.
+        if style is not None: # Only pop if there was a pushed style.
+            style = self.popStyle()
 
         # XML-nodes are organized as: node - node.text - node.children - node.tail
         # If there is no text or if the node does not have tail text, these are None.
-        # Restore the graphic state at the end of the element content processing to the 
-        # style of the parent in order to process the tail text.
-        style = self.popStyle()
         nodeTail = node.tail
         if nodeTail is not None:
-            if style.stripWhiteSpace:
+            if style is not None and style.stripWhiteSpace is not None:
+                # If there is a style and if the replacement is not None.
                 nodeTail = nodeTail.strip() + style.stripWhiteSpace
-            if nodeTail: # Anython left to add?
-                #print node.tag, `node.tail`
-                tb.append(getFormattedString(nodeTail, style))
-                         
+            if nodeTail: # Any text left to add?
+                tb.append(getFormattedString(nodeTail, style)) # If style is None, just add plain string.
+
     def typesetFile(self, fileName):
         u"""Read the XML document and parse it into a tree of document-chapter nodes. Make the typesetter
         start at page pageNumber and find the name of the flow in the page template."""

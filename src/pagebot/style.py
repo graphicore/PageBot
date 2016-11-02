@@ -163,7 +163,9 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
         # Language and hyphenation
         language = 'en', # Language for hyphenation and spelling. Can be altered per style in FormattedString.
         hyphenation = True,
-        stripWhiteSpace = ' ', # Strip pre/post white space from e.text and e.tail and add single tail space
+        # Strip pre/post white space from e.text and e.tail and substitute by single tail space.
+        # Set to None if no stripping should be done. Set to newline or empty string if tags need to glue together.
+        stripWhiteSpace = ' ',
 
         # Paging
         pageNumberMarker = '#??#', # Text pattern that will be replaced by current page number.
