@@ -50,6 +50,10 @@ class Element(object):
         u"""Default is that elements are not part of a flow."""
         return False
 
+    def isText(self):
+        u"""Default is that elements are not handling text."""
+        return False
+
 class Galley(Element):
     u"""A Galley is sticky sequential flow of elements, where the parts can have 
     different widths (like headlines, images and tables) or responsive width, such as images 
@@ -134,6 +138,10 @@ class TextBox(Element):
         u"""This is a flow, if the two next parameters are filled."""
         return self.nextBox is not None and self.nextPage is not None
 
+    def isText(self):
+        u"""This element is capable of handling text."""
+        return True
+
     def _get_next(self):
         return self.nextBox, self.nextPage
     next = property(_get_next)
@@ -179,6 +187,10 @@ class Text(Element):
 
     def getFs(self):
         return self._fs
+
+    def isText(self):
+        u"""This element is capable of handling text."""
+        return True
 
     def draw(self, page, x, y):
         u"""Draw the formatted text. Since this is not a text column, but just a 
