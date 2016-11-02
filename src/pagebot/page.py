@@ -92,19 +92,25 @@ class Page(object):
         u"""Answer the next page after self in the document."""
         return self.parent.nextPage(self, nextPage, makeNew)
 
-    def getNextFlowBox(self, tb, makeNew=False):
+    def getNextFlowBox(self, tb, makeNew=True):
+        u"""Answer the next textBox that tb is point to. This can be on the same page or a next
+        page, depending how the page (and probably its template) is defined."""
         if tb.nextPage:
+            # The flow textBox is pointing to another page. Try to get it, and otherwise create one,
+            # if makeNew is set to True.
             page = self.nextPage(tb.nextPage, makeNew)
-            print('bbbbbb', tb.eId, tb.nextBox, tb.nextPage)
+            # Hard check. Otherwise something must be wrong in the template flow definition.
+            # or there is more content than we can handle, while not allowing to create new pages.
             assert page is not None
+            assert not page is self # Make sure that we got a another page than self.
+            # Get the element on the next page that
             tb = page.getElement(tb.nextBox)
+            # Hard check. Otherwise something must be wrong in the template flow definition.
             assert tb is not None and not len(tb)
         else:
-            page = self
-            print('aaaaaaa', page, tb.eId, tb.nextBox)
+            page = self # Staying on the same page, flowing into another column.
             tb = self.getElement(tb.nextBox)
-            print('ssssss', page, tb.eId, tb.nextBox)
-            # Make sure that this one is empty, otherwise mistake in template
+            # Hard check. Make sure that this one is empty, otherwise mistake in template
             assert not len(tb)
         return page, tb
         

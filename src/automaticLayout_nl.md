@@ -40,9 +40,11 @@ Waar in de traditionele manier van werken met opmaakprogrammatuur zoals Quark XP
 
 ![Overlapping columns](images/automaticlayout/im8.png "Bij het plaatsen van elementen met een verschillende breedte worden andere kolommen gevuld zonder dat al duidelijk is of in de volgende kolom een splitsing in tekst wel mogelijk is. Dit maakt he nodig dat het systeem kan “backtracken” zodat het mogelijk is om terug te komen op eerdere slissingen in de opmaak van de pagina.")
 
-Dit is een concept notitie, aanpassingen en uitbreidingen zijn nog nodig. Deze pagina’s werden automatisch opgemaakt met PageComposer, een OpenSourece applicatie voor Drawbot.
+Dit is een concept notitie, aanpassingen en uitbreidingen zijn nog nodig. Deze pagina’s werden automatisch opgemaakt met Pagebot (www.pagebot.io), een Open Sourece applicatie voor Drawbot.
 
 Buro Petr van Blokland + Claudia Mens
 Rietveld 562611 LM Delft
 @petrvanbloklandburo@petr.com 
 typetr.typenetwork.com
+www.pagebot.io
+www.pagebot.pro

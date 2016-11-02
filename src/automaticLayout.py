@@ -46,13 +46,20 @@ rs.ph = 11 * 72 # Page height 11", international generic fit.
 rs.ml = 7*U # Margin leftrs.mt = 7*U # Margin top
 rs.baselineGrid = 2*U
 rs.g = U # Generic gutter.
-rs.cw = 11*U # Column width. 
-rs.ch = 6*rs.baselineGrid - rs.g # Approx. square. Fit with baseline.
+# Column width. Uneven means possible split in 5+1+5 or even 2+1+2 +1+ 2+1+2
+# 11 is a the best in that respect for column calculation.
+rs.cw = 11*U 
+rs.ch = 6*rs.baselineGrid - rs.g # Approx. square and fitting with baseline.
 rs.listIndent = U*0.8 # Indent for bullet lists
-rs.listTabs = [(rs.listIndent, rs.LEFT_ALIGN)]
-# Display option
+rs.listTabs = [(rs.listIndent, rs.LEFT_ALIGN)] # Match bullet+tab with left indent.
+# Display option during design and testing
 rs.showGrid = True
 rs.showBaselineGrid = True
+rs.showFlowConnections = True
+if rs.showGrid: # Only show text boxes when showing grid.
+    BOX_COLOR = (0.8, 0.8, 0.8, 0.4)
+else:
+    BOX_COLOR = None
 # Text measures
 rs.leading = rs.baselineGrid
 rs.rLeading = 0
@@ -66,7 +73,6 @@ else: # NL version of the article.
     FILENAME = 'automaticLayout_nl.md'
 
 MAIN_FLOW = 'main' # ELement id of the text box on pages the hold the main text flow.
-BOX_COLOR = (0.8, 0.8, 0.8, 0.4)
 
 # Tracking presets
 H1_TRACK = H2_TRACK = 0.015 # 1/1000 of fontSize, multiplier factor.
