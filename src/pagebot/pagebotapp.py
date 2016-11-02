@@ -10,7 +10,7 @@
 #
 #     pagebotapp.py
 #
-class PagebotApp(object):
+class PageBotApp(object):
     u"""Wrapper class to bundle all document page typesetter and composition functions, genating 
     export document."""
                     
