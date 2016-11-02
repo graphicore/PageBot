@@ -1,11 +1,11 @@
 # -*- coding: UTF-8 -*-
 #-----------------------------------------------------------------------------
 #     Copyright (c) 2016+ Type Network, www.typenetwork.com, www.pagebot.io
-#     Licensed under MIT conditions
-#     Made for usage in Drawbot, www.drawbot.com
 #
 #     P A G E B O T
 #
+#     Licensed under MIT conditions
+#     Made for usage in Drawbot, www.drawbot.com
 # -----------------------------------------------------------------------------
 #
 #     style.py
@@ -55,32 +55,41 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
         showFlowConnection=SHOW_FLOW_CONNECTIONS):
     u"""Answer the main root style tha contains all default style attributes of Pagebot.
     To be overwritten when needed by calling applications.
-    CaAPITALIZED attribute names are for reference only. Not used directly from styles.
+    CAPITALIZED attribute names are for reference only. Not used directly from styles.
     They can be copied on other style attributes.
-    Note that if the overall unit style.u is changed by the calling applcation, also the
-    U-based values must be recalcualted for proper measures.
+    Note that if the overall unit style.u is changed by the calling application, also the
+    U-based values must be recalculated for proper measures.
     """
-    # Some calculations to show dependecies.
+    # Some calculations to show dependencies.
     baselineGrid = 2*u
     leftIndent = 0.8*u
+    gutter = u
 
     return Style( # Answer the default root style.
 
         # Basic page/template measures
         name = 'root', # Name of the style, key in document.getRootstyle( )
-        u = u, # Base unir of Dutch/Swiss typography :)
-        w = 595, # Page width, basis size of the document. 210mm, international generic fit.
-        h = 11 * 72, # Page height, basis size of the document. 11", international generic fit.
-        # Margins left, top, right bottom (
-        # as rounding of column width and gutter.
-        ml = 7*u, # Marign top
+        u = u, # Base unit for Dutch/Swiss typography :)
+        w = 595, # Page width, basis size of the document. Point rounding of 210mm, international generic fit.
+        h = 11 * 72, # Page height, basic size of the document. 11", international generic fit.
+        ml = 7*u, # Margin top
         mt = 7*u, # Margin left
         mr = 6*u, # Margin right is used as minimum. Actual value is calculated from cw and gutter,
         mb = 6*u, # Margin bottom is used as minimum. Actual value is calculated from baseline grid.
+        # Gutter is used a standard distance between columns. Note that when not-justifying, the visual
+        # gutter on the right side of columns seems to be larger. This can be compensated for in the
+        # distance between images.
+        g = gutter, # Main gutter of pages. Based on U.
         # Column width for column2point and column2rect calculations.
-        cw = 11*u, # Column width, based on multiple of U or gutter.
-        ch = u*baselineGrid - u, # Aopprocimately square with cw + gutter.
-        g = u, # Main gutter of pages. Based on U.
+        # Column width, based on multiples of gutter. If uneven, this allows the column to be interpreted
+        # as two smaller columns of 5 +1+ 5 or even 2+1+2 +1+ 2+1+2, e.g. for micro-layouts in tables.
+        # Column width for column2point and column2rect calculations.
+        # Column width, based on multiples of gutter. If uneven, this allows the column
+        # to be interpreted as two smaller columns of 5 +1+ 5 or even 2+1+2 +1+ 2+1+2,
+        # e.g. for micro-layouts in tables.
+        # 11*gutter is one of the best values, as the smallest micro-column is 2 instead  of scaling back to 1.
+        cw = 11*gutter,
+        ch = u*baselineGrid - u, # Approximately square with cw + gutter.
 
         # Grid stuff
         showGrid = showGrid, # Flag to show the grid in output.
@@ -105,13 +114,13 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
         # Typographic defaults
         font = 'Georgia', # Default is to avoid existing font and fontSize in the graphic state.
         fallbackFont = 'LucidaGrande',
-        fontSize = u * 7/10, # Default font size in points, realted to U
+        fontSize = u * 7/10, # Default font size in points, related to U
 
         # Horizontal spacing for absolute and fontsize-related measures
-        tracking = 0, # Absloute tracking value. Note that this is different from standard name definition.
+        tracking = 0, # Absolute tracking value. Note that this is different from standard name definition.
         rTracking = 0, # Tracking as factor of the fontSize.
-        align = LEFT_ALIGN, # Alignment, one if ('left', 'justified', 'cemter'. 'right')
-        # Set tabs,tuples of (float, alignment) Aligment can be “left”, “center”, “right” 
+        align = LEFT_ALIGN, # Alignment, one if ('left', 'justified', 'center'. 'right')
+        # Set tabs,tuples of (float, alignment) Alignment can be “left”, “center”, “right”
         # or any other character. If a character is provided the alignment will be right and 
         # centered on the specified character.
         listTabs = [(leftIndent, LEFT_ALIGN)], # Default indent for bullet lists. Copy onto style.tabs for usage.
@@ -121,7 +130,7 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
         rFirstLineIndent = 0, # First line indent as factor if font size.
         indent = 0, # Left indent (for left-right based scripts)
         rIndent = 0, # Left indent as factor of font size.
-        tailIndent = 0, # Tail/right indent (for left-right based scritps)
+        tailIndent = 0, # Tail/right indent (for left-right based scripts)
         rTailIndent = 0, # Tail/right Indent as factor of font size
 
         # List of supported OpenType features. 
@@ -141,23 +150,27 @@ def getRootStyle(u=U, showGrid=SHOW_GRID, showBaselineGrid=SHOW_BASELINE_GRID,
         baselineGridfit = False,
         firstLineGridfit = True,
         baselineShift = 0, # Absolute baseline shift in points. Positive value is upward.
-        rBaselineShift = 0, # Relative baseline shift, multiplyer to current self.fontSize
-        needsAbove = 0, # Check if this space is available above, to get amount of text lines above headings.
-        rNeedsAbove = 0, # Check if this relative fontSize space is available above, to get amount of text lines above headings.
-        needsBelow = 0, # Check if this point space is available below, to get amount of text lines below headings.
-        rNeedsBelow = 0, # Check if this relative fontSize space is available below, to get amount of text lines below headings.
+        rBaselineShift = 0, # Relative baseline shift, multiplier to current self.fontSize
+        # Check if this space is available above, to get amount of text lines above headings.
+        needsAbove = 0,
+        # Check if this relative fontSize space is available above, to get amount of text lines above headings.
+        rNeedsAbove = 0,
+        # Check if this point space is available below, to get amount of text lines below headings.
+        needsBelow = 0,
+        # Check if this relative fontSize space is available below, to get amount of text lines below headings.
+        rNeedsBelow = 0,
 
         # Language and hyphenation
-        language = 'en', # Language for hpyphenation and spelling. Can be altered per style.
+        language = 'en', # Language for hyphenation and spelling. Can be altered per style in FormattedString.
         hyphenation = True,
-        stripWhiteSpace = ' ', # Strip pre/post white space from e.text and e.tail and add single space
+        stripWhiteSpace = ' ', # Strip pre/post white space from e.text and e.tail and add single tail space
 
         # Paging
         pageNumberMarker = '#??#', # Text pattern that will be replaced by current page number.
-        firstPage = 1, # First page number of the docjment.
+        firstPage = 1, # First page number of the document.
 
         # Color
-        NO_COLOR = NO_COLOR, # Add no-color flag (-1) to make differenve with "color" None.
+        NO_COLOR = NO_COLOR, # Add no-color flag (-1) to make difference with "color" None.
         fill = 0, # Default is black
         stroke = None, # Default is to have no stroke.
         cmykFill = NO_COLOR, # Flag to ignore, None is valid value for color.

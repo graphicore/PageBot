@@ -1,13 +1,13 @@
-##-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 #     Copyright (c) 2016+ Type Network, www.typenetwork.com, www.pagebot.io
-#     Licensed under MIT conditions
-#     Made for usage in Drawbot, www.drawbot.com
 #
 #     P A G E B O T
 #
+#     Licensed under MIT conditions
+#     Made for usage in Drawbot, www.drawbot.com
 # -----------------------------------------------------------------------------
 #
-#     variableFontDesign.py
+#     VariableFontDesign.py
 #
 import pagebot.style
 

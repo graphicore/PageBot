@@ -1,4 +1,16 @@
-# from https://github.com/fonttools/fonttools/blob/master/Lib/fontTools/varLib/mutator.py
+# -*- coding: UTF-8 -*-
+#-----------------------------------------------------------------------------
+#
+#     P A G E B O T
+#
+#     Copyright (c) 2016+ Type Network, www.typenetwork.com, www.pagebot.io
+# 	  from https://github.com/fonttools/fonttools/blob/master/Lib/fontTools/varLib/mutator.py
+#     Licensed under MIT conditions
+#     Made for usage in Drawbot, www.drawbot.com
+# -----------------------------------------------------------------------------
+#
+#     gxmutator.py
+#
 from fontTools.misc.py23 import *
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates
