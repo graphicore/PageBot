@@ -217,7 +217,8 @@ class Page(object):
         return flows
 
     def drawArrow(self, xs, ys, xt, yt, onText=1):
-        u"""Draw curved arrow marker between the two points."""
+        u"""Draw curved arrow marker between the two points.
+        TODO: Add drawing of real arrow-heads, rotated in the right direction."""
         style = self.parent.getRootStyle()
         fms = style.flowMarkerSize
         fmf = style.flowCurvatureFactor
@@ -242,8 +243,8 @@ class Page(object):
         oval(xt - fms, yt - fms, 2 * fms, 2 * fms)
 
     def drawFlowConnections(self):
-        u"""If rootStyle.showFlowConnections is set, then draw the flow connections
-        on the page, using the stroke/width settings of the style."""
+        u"""If rootStyle.showFlowConnections is True, then draw the flow connections
+        on the page, using their stroke/width settings of the style."""
         style = self.parent.getRootStyle()
         if not style.showFlowConnections:
             return

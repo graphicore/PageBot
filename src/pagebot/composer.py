@@ -11,7 +11,15 @@
 #     composer.py
 #
 class Composer(object):
+    u"""A Composer takes a galley and tries to make a “nice” layout (on existing or new document pages),
+    by taking the elements from the galley pasteboard and finding the best place in pages, e.g. in
+    page-flows that are copied from their templates.
+    If necessary elements can be split, new elements can be made on the page and element can be
+    reshaped byt width and height, if that results in better placements.
+    """
     def __init__(self, document):
+        u"""Store the document that this Composer will be operating on. The document inclused
+        the pages that alreasdy exist, and it defined the baseStyle for all other cascading styles."""
         self.document = document
 
     def compose(self, galley, page, flowId=None):
@@ -29,6 +37,7 @@ class Composer(object):
         # Keeping overflow of text boxes here while iterating.
         assert elements is not None # Otherwise we did not get a galley here.
         for element in elements:
+            break
             fs = element.getFs()
             if fs is None: # This is a non-text element. Try to find placement.
                 self.tryPlacement(element, page)
