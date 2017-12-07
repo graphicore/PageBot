@@ -49,4 +49,9 @@ drawSierpinskiSquare(0, 0, W, W)
 # Context should hide that problem.
 for extension in ('pdf', 'jpg'):
     context.saveDocument("_export/SierpinskiSquare."+extension)
+
+# Open in default viewer, if the file was created.
+if os.path.exists(EXPORT_PATH):
+    os.system(u'open "%s"' % EXPORT_PATH)
+
 print 'Done'
