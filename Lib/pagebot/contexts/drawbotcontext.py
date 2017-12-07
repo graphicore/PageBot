@@ -131,16 +131,37 @@ class DrawBotContext(BaseContext):
     def line(self, p1, p2):
         self.b.line(p1, p2)
 
-    def drawPath(self, path, p=(0,0), sx=1, sy=None):
+    def newPath(self):
+        self._path = self.b.newPath()
+
+    def drawPath(self, path=None, p=(0,0), sx=1, sy=None):
         u"""Draw the NSBezierPath, or equivalent in other contexts. Scaled image is drawn on (x, y),
         in that order."""
+        if path is None:
+            path = self._path
         self.saveGraphicState()
         if sy is None:
             sy = sx
         self.scale(sx, sy)
         self.b.translate(p[0]/sx, p[1]/sy)
-        self.b.drawPath(path)
+        if path is not None:
+            self.b.drawPath(path)
+        else:
+            self.b.drawPath()
         self.restoreGraphicState()
+
+    def moveTo(self, p):
+        self.b.moveTo((p[0], p[1]))
+
+    def lineTo(self, p):
+        self.b.lineTo((p[0], p[1]))
+
+    def quadTo(bcp, p):
+        # TODO: Convert to Bezier with 0.6 rule
+        pass
+
+    def curveTo(self, bcp1, bcp2, p):
+        pass
 
     def scale(self, sx, sy=None):
         u"""Set the drawing scale."""

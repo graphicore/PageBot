@@ -55,7 +55,10 @@ class FlatString(BabelString):
         u"""Answer a FlatString instance from valid attributes in *style*. Set all values after testing
         their existence, so they can inherit from previous style formats.
         If target width *w* or height *h* is defined, then *fontSize* is scaled to make the string fit *w* or *h*."""
-
+        if style is None:
+            style = dict(font=cls.DEFAULT_FONT, fontSize=fontSize or cls.DEFAULT_FONTSIZE, 
+                leading=cls.DEFAULT_LEADING,textFill=0, units='pt')
+        # Force upper/lower case of the string?
         sUpperCase = css('uppercase', e, style)
         sLowercase = css('lowercase', e, style)
         sCapitalized = css('capitalized', e, style)
@@ -65,13 +68,18 @@ class FlatString(BabelString):
             s = s.lower()
         elif sCapitalized:
             s = s.capitalize()
-
-        fontPath = context.getFontPathOfFont(style.get('font', cls.DEFAULT_FONT))
+        # Make the Flat strike and set parameters if they exist in the style.
+        fontPath = context.getFontPathOfFont(style.get('font'))
+        if fontPath is None: # Could not find a font with this name. Try default.
+            fontPath = context.getFontPathOfFont(cls.DEFAULT_FONT)
         font = context.b.font.open(fontPath)
         strike = context.b.strike(font)
-        strike.size(fontSize or style.get('fontSize', cls.DEFAULT_FONTSIZE), style.get('leading', cls.DEFAULT_LEADING), units='pt')
+        strike.size(fontSize or style.get('fontSize', cls.DEFAULT_FONTSIZE), style.get('leading', cls.DEFAULT_LEADING), 
+            units=style.get('units', 'pt'))
+        if 'color' in style:
+            strike.color(style['color'])
         if w is not None:
-            strike.width = w
+            strike.width(w)
 
         # Since Flat does not do font GSUB feature compile, we'll make the transformed string here,
         # using Tal's https://github.com/typesupply/compositor
