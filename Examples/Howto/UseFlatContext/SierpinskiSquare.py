@@ -18,6 +18,8 @@
 #     Run as cmd-line:
 #     --> python SierpinskiSquare.py 
 
+import os
+
 from random import random
 from pagebot.contexts import defaultContext as context
 
@@ -47,11 +49,12 @@ drawSierpinskiSquare(0, 0, W, W)
 # Gray scale does not work for .svg
 # Opaque does not work for .pdf
 # Context should hide that problem.
-for extension in ('pdf', 'jpg'):
-    context.saveDocument("_export/SierpinskiSquare."+extension)
 
-# Open in default viewer, if the file was created.
-if os.path.exists(EXPORT_PATH):
-    os.system(u'open "%s"' % EXPORT_PATH)
+for extension in ('pdf', 'jpg'):    
+    exportPath = "_export/SierpinskiSquare."+extension
+    context.saveDocument(exportPath)
+    # Open in default viewer, if the file was created.
+    if os.path.exists(exportPath):
+        os.system(u'open "%s"' % exportPath)
 
 print 'Done'

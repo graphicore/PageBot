@@ -62,6 +62,7 @@ for p in range(PAGES):
 # Does not support alpha colors
 #context.saveDocument('_export/HelloCircleSquare.jpg')
 context.saveDocument(EXPORT_PATH)
+
 # Open in default viewer, if the file was created.
 if os.path.exists(EXPORT_PATH):
     os.system(u'open "%s"' % EXPORT_PATH)
