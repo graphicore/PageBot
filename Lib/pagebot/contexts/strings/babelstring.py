@@ -25,7 +25,7 @@ class BabelString(object):
         self.context = context
 
     def __repr__(self):
-        return u'%s' % self.s
+        return u'<%s "%s">' % (self.__class__.__name__, self.s)
 
     def __add__(self, s):
         self.append(s)
@@ -43,7 +43,7 @@ class BabelString(object):
         return len(self.s)
 
     def append(self, s):
-        """Append string or FlatString to self."""
+        """Append string or BabelString to self."""
         try:
             self.s += s.s
         except (TypeError, AttributeError):

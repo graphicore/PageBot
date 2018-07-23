@@ -612,7 +612,7 @@ class FlatContext(BaseContext):
 
     setTextStrokeColor = textStroke
 
-    def stroke(self, c, w=None, b=None):
+    def stroke(self, c, w=None):
         u"""Set global stroke color or the color of the formatted string."""
         assert isinstance(c, Color), ('FlatContext.stroke: Color "%s" is not Color instance' % c)
         assert w is None or isUnit(w), ('FlatContext.stroke: Value %s must of type Unit' % w)

@@ -67,8 +67,7 @@ class Element(object):
         Ignore setting of eId as attribute, guaranteed to be unique.
 
         >>> import sys
-        >>> e = Element(name='TestElement', x=10, y=20, w=100, h=120, maxW=822,
-                maxH=933, pl=11, pt=22, margin=(33,44,55,66))
+        >>> e = Element(name='TestElement', x=10, y=20, w=100, h=120, maxW=822, maxH=933, pl=11, pt=22, margin=(33,44,55,66))
         >>> e.name
         'TestElement'
         >>> e.description is None
@@ -3480,9 +3479,9 @@ class Element(object):
         Note that the y may be outside the parent box. Only elements with identical z-value are compared.
         Comparison of available space, includes the margins of the elements."""
         if self.originTop:
-            y = 0
+            y = -self.bleedTop
         else:
-            y = self.parent.h
+            y = self.parent.h + self.bleedTop
         for e in self.parent.elements:
             if previousOnly and e is self: # Only look at siblings that are previous in the list.
                 break
@@ -3500,9 +3499,9 @@ class Element(object):
         Note that the y may be outside the parent box. Only elements with identical z-value are compared.
         Comparison of available space, includes the margins of the elements."""
         if self.originTop:
-            y = self.parent.h
+            y = self.parent.h + self.bleedBottom
         else:
-            y = 0
+            y = -self.bottomBottom
         for e in self.parent.elements: # All elements that share self.parent, except self.
             if previousOnly and e is self: # Only look at siblings that are previous in the list.
                 break
@@ -3519,7 +3518,7 @@ class Element(object):
         This means we are just looking at the horizontal projection of (self.top, self.bottom).
         Note that the x may be outside the parent box. Only elements with identical z-value are compared.
         Comparison of available space, includes the margins of the elements."""
-        x = 0
+        x = -self.bleedLeft
         for e in self.parent.elements: # All elements that share self.parent, except self.
             if previousOnly and e is self: # Only look at siblings that are previous in the list.
                 break
@@ -3539,7 +3538,7 @@ class Element(object):
         This means we are just looking at the vertical projection of (self.left, self.right).
         Note that the y may be outside the parent box. Only elements with identical z-value are compared.
         Comparison of available space, includes the margins of the elements."""
-        x = self.parent.w
+        x = self.parent.w + self.bleedRight
         for e in self.parent.elements: # All elements that share self.parent, except self.
             if previousOnly and e is self: # Only look at siblings that are previous in the list.
                 break
@@ -3924,7 +3923,7 @@ class Element(object):
 
     def isBottomOnBottomSide(self, tolerance=0):
         if self.originTop:
-            return abs(self.parent.h - self.bottom) <= tolerance
+            return abs(self.parent.h - self.bottom - self.bleedBottom) <= tolerance
         return abs(self.bottom) <= tolerance
 
     def isBottomOnTop(self, tolerance=0):
@@ -3991,10 +3990,10 @@ class Element(object):
         return abs(self.parent.w/2 - self.left) <= tolerance
 
     def isLeftOnLeft(self, tolerance=0):
-        return abs(self.parent.pl - self.left) <= tolerance
+        return abs(self.parent.pl - self.left - self.bleedLeft) <= tolerance
 
     def isLeftOnLeftSide(self, tolerance=0):
-        return abs(self.left) <= tolerance
+        return abs(self.left - self.bleedLeft) <= tolerance
 
     def isLeftOnRight(self, tolerance=0):
         return abs(self.parent.w - self.parent.pr - self.left) <= tolerance
@@ -4097,7 +4096,7 @@ class Element(object):
         return abs(self.parent.w - self.parent.pr - self.right) <= tolerance
 
     def isRightOnRightSide(self, tolerance=0):
-        return abs(self.parent.w - self.right) <= tolerance
+        return abs(self.parent.w - self.right + self.bleedRight) <= tolerance
 
     def isBottomOnMiddle(self, tolerance=0):
         pt = self.parent.pt # Get parent padding top
@@ -4122,7 +4121,7 @@ class Element(object):
 
     def isTopOnTopSide(self, tolerance=0):
         if self.originTop:
-            return abs(self.top) <= tolerance
+            return abs(self.parent.top - self.top + self.bleedTop) <= tolerance
         return abs(self.parent.h - self.top) <= tolerance
 
     # Shrink block conditions
@@ -4324,16 +4323,17 @@ class Element(object):
     def bottom2BottomSide(self):
         """Move bottom of the element to the bottom of the parent side.
 
-        >>> e1 = Element(y=300)
+        >>> from pagebot.toolbox.units import p
+        >>> e1 = Element(y=300, )
         >>> e2 = Element(elements=[e1])
         >>> success = e1.bottom2BottomSide()
         >>> e1.bottom # Move bottom of e1 down to padding-bottom position of e2
         0pt
         """
         if self.originTop:
-            self.bottom = self.parent.h
+            self.bottom = self.parent.h + self.bleedBottom
         else:
-            self.bottom = 0
+            self.bottom = -self.bleedBottom
         return True
 
     def bottom2Top(self):
@@ -4434,7 +4434,7 @@ class Element(object):
         return True
 
     def left2LeftSide(self):
-        self.left = 0
+        self.left = -self.bleedLeft
         return True
 
     def top2Middle(self):
@@ -4546,7 +4546,7 @@ class Element(object):
         return True
 
     def right2RightSide(self):
-        self.right = self.parent.w
+        self.right = self.parent.w + self.bleedRight
         return True
 
     def bottom2Middle(self):
@@ -4579,9 +4579,9 @@ class Element(object):
 
     def top2TopSide(self):
         if self.originTop:
-            self.mTop = 0
+            self.mTop = -self.bleedTop
         else:
-            self.mTop = self.parent.h
+            self.mTop = self.parent.h + self.bleedTop
         return True
 
     # Floating parent padding
@@ -4642,11 +4642,14 @@ class Element(object):
         return True
 
     def fit2BottomSide(self):
+        u"""Grow vertical to fit the bottom of the element on the bottom 
+        of self.parent. If there is a self.bleedBottom defined, than
+        position there."""
         if self.originTop:
-            self.h += self.parent.h - self.bottom
+            self.h += self.parent.h - self.bottom - self.bleedBottom
         else:
             top = self.top
-            self.bottom = 0
+            self.bottom = -self.bleedBottom
             self.h += top - self.top
         return True
 
@@ -4657,8 +4660,11 @@ class Element(object):
         return True
 
     def fit2LeftSide(self):
+        u"""Grow left to fit the left of the element on the left 
+        of self.parent. If there is a self.bleedLeft defined, than
+        position there."""
         right = self.right
-        self.left = 0
+        self.left = -self.bleedLeft
         self.w += right - self.right
         return True
 
@@ -4711,7 +4717,7 @@ class Element(object):
         (100pt, 20pt, 200pt, 50pt)
         >>>
         """
-        self.w = self.parent.w - self.x
+        self.w = self.parent.w - self.x + self.bleedRight
         return True
 
     def fit2Top(self):
@@ -4738,10 +4744,10 @@ class Element(object):
     def fit2TopSide(self):
         if self.originTop:
             bottom = self.bottom
-            self.top = 0
+            self.top = -self.bleedTop
             self.h += bottom - self.bottom
         else:
-            self.h += self.parent.h - self.top
+            self.h += self.parent.h - self.top + self.bleedTop
         return True
 
     #   Shrinking
@@ -4758,10 +4764,10 @@ class Element(object):
 
     def shrink2BlockBottomSide(self):
         if self.originTop:
-            self.h += self.parent.h - self.bottom
+            self.h += self.parent.h - self.bottom + self.bleedBottom
         else:
             top = self.top
-            self.bottom = 0 # Parent botom
+            self.bottom = -self.bleedBottom # Parent bottom
             self.h += top - self.top
         return True
 
@@ -4773,7 +4779,7 @@ class Element(object):
 
     def shrink2BlockLeftSide(self):
         right = self.right
-        self.left = 0
+        self.left = -self.bleedLeft
         self.w += right - self.right
         return True
 
@@ -4782,7 +4788,7 @@ class Element(object):
         return True
 
     def shrink2BlockRightSide(self):
-        self.w += self.parent.w - self.right
+        self.w += self.parent.w - self.right + self.bleedRight
         return True
 
     def shrink2BlockTop(self):
@@ -4797,10 +4803,10 @@ class Element(object):
     def shrink2BlockTopSide(self):
         if self.originTop:
             bottom = self.bottom
-            self.top = 0
+            self.top = -self.bleedTop
             self.h += bottom - self.bottom
         else:
-            self.h += self.parent.h - self.top
+            self.h += self.parent.h - self.top + self.bleedTop
         return True
 
     #    Text conditions

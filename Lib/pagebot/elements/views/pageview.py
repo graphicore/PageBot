@@ -267,15 +267,19 @@ class PageView(BaseView):
             dt = datetime.datetime.now()
             d = dt.strftime("%A, %d. %B %Y %I:%M%p")
             if page.parent is not None: # Test if there is a document
-                pn = page.parent.getPageNumber(page)
+                pn, pIndex = page.parent.getPageNumber(page)
                 title = page.parent.title or 'Untitled'
             else: # Otherwise always page number #1
-                pn = 1
+                pn, pIndex = 1, 0
                 title = 'Untitled'
-            s = 'Page %s | %s | %s' % (pn, d, title)
+            if pIndex:
+                s = 'Page %s-%d | %s | %s' % (pn, pIndex, d, title)
+            else:
+                s = 'Page %s | %s | %s' % (pn, d, title)
             if page.name:
                 s += ' | ' + page.name
             bs = context.newString(s, style=dict(font=self.css('viewPageNameFont'), textFill=color(0), fontSize=fontSize))
+            self.context.text(bs, (self.pl + cmDistance, self.pb + page.h + cmSize - fontSize*2)) # Draw on top of page.
             self.context.text(bs, (self.pl + cmDistance, self.pb + page.h + cmSize - fontSize*2)) # Draw on top of page.
 
     #   D R A W I N G  F L O W S

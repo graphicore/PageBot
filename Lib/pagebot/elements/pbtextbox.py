@@ -313,9 +313,17 @@ class TextBox(Element):
         fill and/or stroke are defined."""
         context = view.context # Get current context
 
+        #context.fill(color(1, 0, 0))
+        #context.text(self.bs, pt(200, 200))
+
         p = pointOffset(self.origin, origin)
         p = self._applyScale(view, p)
         px, py, _ = p = self._applyAlignment(p) # Ignore z-axis for now.
+
+        print(p, px, py, self.origin, origin)
+        context.fill(color(1, 0, 0))
+        context.text(self.bs, (p[0], p[1]))
+        return 
 
         # TODO: Add marker if there is overflow text in the textbox.
 

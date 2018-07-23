@@ -552,7 +552,7 @@ class DrawBotContext(BaseContext):
 
     #   C O L O R
 
-    def setTextFillColor(self, fs, c):
+    def textFill(self, fs, c):
         u"""Set the fill color of the formatted string.
 
         >>> context = DrawBotContext()
@@ -567,17 +567,15 @@ class DrawBotContext(BaseContext):
         elif c is noColor:
             fs.fill(None) # Set color to no-color
         elif c.isCmyk:
-            cmyk = list(c.cmyk)
-            cmyk.append(c.a)
-            fs.cmykFill(*cmyk) # FormattedString.cmykStroke has slight API difference with DrawBot.cmykStroke
+            c, m, y, k = c.cmyk
+            fs.cmykFill(c, m, y, k, c.a) # FormattedString.cmykStroke has slight API difference with DrawBot.cmykStroke
         else:
-            rgb = list(c.rgb)
-            rgb.append(c.a) # FormattedString.stroke has slight API difference with DrawBot.stroke
-            fs.fill(*rgb) # Convert to rgb, whatever the type of color
+            r, g, b = c.rgb  # FormattedString.stroke has slight API difference with DrawBot.stroke
+            fs.fill(r, g, b, c.a) # Convert to rgb, whatever the type of color
 
-    textFill = setTextFillColor
+    setTextFillColor = textFill
 
-    def setTextStrokeColor(self, fs, c, w=None):
+    def textStroke(self, fs, c, w=None):
         u"""Set the stroke color of the formatted string.
 
         >>> context = DrawBotContext()
@@ -599,7 +597,7 @@ class DrawBotContext(BaseContext):
             rgb.append(c.a) # FormattedString.stroke has slight API difference with DrawBot.stroke
             fs.stroke(rgb) # Convert to rgb, whatever the type of color
 
-    textStroke = setTextStrokeColor
+    setTextStrokeColor = textStroke
 
     def textStrokeWidth(self, fs, w):
         u"""Set the stroke width of the formatted string.
@@ -683,7 +681,7 @@ class DrawBotContext(BaseContext):
     #   I M A G E
 
     def imagePixelColor(self, path, p):
-        return self.b.imagePixelColor(path, p)
+        return self.b.imagePixelColor(path, ru(p[0], p[1]))
 
     def imageSize(self, path):
         u"""Answer the (w, h) image size of the image file at path."""
@@ -692,6 +690,8 @@ class DrawBotContext(BaseContext):
     def image(self, path, p, alpha=1, pageNumber=None, w=None, h=None):
         """Draw the image. If w or h is defined, then scale the image to fit."""
         iw, ih = self.imageSize(path)
+
+        print('233233131', p, iw, ih)
 
         if w and not h: # Scale proportional
             h = ih * w/iw # iw : ih = w : h
@@ -702,13 +702,15 @@ class DrawBotContext(BaseContext):
             h = ih
 
         # else both w and h are defined, scale disproportional
-        x, y, = p[0], p[1]
+        x, y = ru(p[0], p[1])
         sx, sy = w/iw, h/ih
         self.save()
         self.scale(sx, sy)
         #self.b.image(path, ((x*sx).r, (y*sy).r), alpha=alpha, pageNumber=pageNumber)
         self.b.image(path, ((x*sx), (y*sy)), alpha=alpha, pageNumber=pageNumber)
         self.restore()
+
+        print('@##@@#@#@#', ((x*sx), (y*sy)))
 
     def getImageObject(self, path):
         """Answer the ImageObject that knows about image filters.

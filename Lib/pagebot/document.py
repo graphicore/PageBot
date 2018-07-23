@@ -22,7 +22,7 @@ from pagebot.elements.views import viewClasses, defaultViewClass
 from pagebot.constants import *
 from pagebot.style import getRootStyle
 from pagebot.toolbox.transformer import obj2StyleId
-from pagebot.toolbox.units import pt, units
+from pagebot.toolbox.units import pt, units, point3D
 from pagebot.toolbox.color import redColor
 
 class Document(object):
@@ -59,7 +59,7 @@ class Document(object):
 
     def __init__(self, styles=None, theme=None, viewId=None, name=None, title=None, pages=None, autoPages=1, 
             template=None, templates=None, originTop=True, startPage=None, 
-            w=None, h=None, d=None, size=None, size3D=None,
+            w=None, h=None, d=None, size=None, 
             padding=None, lib=None, context=None, exportPaths=None, **kwargs):
         u"""Contains a set of Page elements and other elements used for display in thumbnail mode. 
         Allows to compose the pages without the need to send them directly to the output for 
@@ -73,10 +73,8 @@ class Document(object):
         self.title = title or self.name
 
         self.originTop = originTop # Set as property in rootStyle and also change default rootStyle['yAlign'] to right side.
-        if size3D is not None: # For convenience of the caller, also accept size3D and size tuples. 
-            w, h, d = size3D
-        elif size is not None:
-            w, h = size
+        if size is not None:
+            w, h, d = point3D(size)
         self.w = w or DEFAULT_DOC_WIDTH # Always needs a value. Take 1000 if 0 or None defined.
         self.h = h or DEFAULT_DOC_HEIGHT # These values overwrite the self.rootStyle['w'] and self.rootStyle['h']
         self.d = d or DEFAULT_DOC_DEPTH
@@ -135,6 +133,41 @@ class Document(object):
         """
         return self._lib 
     lib = property(_get_lib)
+
+    def _get_size(self):
+        """Set the size of the element by calling by properties self.w and self.h.
+        If set, then overwrite access from style width and height. self.d is optional attribute.
+
+        >>> doc = Document()
+        >>> doc.size = 101, 202, 303
+        >>> doc.w, doc.h, doc.d
+        (101pt, 202pt, 303pt)
+        >>> doc.size
+        (101pt, 202pt)
+        >>> doc.size3D
+        (101pt, 202pt, 303pt)
+        >>> doc.size = 101 # Set all w, h, d to the same value.
+        >>> doc.size3D
+        (101pt, 101pt, 101pt)
+        >>> doc.size = 660, 201 # e.d is untouched.
+        >>> doc.size3D
+        (660pt, 201pt, 101pt)
+        """
+        return self.w, self.h
+    def _set_size(self, size):
+        if isinstance(size, (tuple, list)):
+            assert len(size) in (2,3)
+            if len(size) == 2:
+                self.w, self.h = size # Don't touch self.d
+            else:
+                self.w, self.h, self.d = size
+        else:
+            self.w = self.h = self.d = size
+    size = property(_get_size, _set_size)
+
+    def _get_size3D(self):
+        return self.w, self.h, self.d
+    size3D = property(_get_size3D, _set_size) # Setting is idential for self.size3D and self.size
 
     def __len__(self):
         u"""Answer the amount of pages in the document.
@@ -969,7 +1002,7 @@ class Document(object):
         >>> doc.minW, doc.maxW, doc.minH, doc.maxH, doc.minD, doc.maxD
         (1pt, 900pt, 1pt, 950pt, 0pt, 955pt)
         >>> doc.getMaxPageSizes()
-        (500pt, 500pt, 0pt)
+        (500pt, 500pt, 100pt)
         >>> page = doc[1]
         >>> page.minW, page.maxW, page.minH, page.maxH, page.minD, page.maxD # Inheriting from doc parent
         (1pt, 900pt, 1pt, 950pt, 0pt, 955pt)
@@ -980,7 +1013,7 @@ class Document(object):
         (<Page:default 1 (900pt, 500pt)>, 900pt)
         >>> doc[4].h = 1111
         >>> doc.getMaxPageSizes() # Clipped to max size
-        (900pt, 950pt, 0pt)
+        (900pt, 950pt, 100pt)
         """
         w, h, d = minW, minH, minD = self.minW, self.minH, self.minD
         maxW, maxH, maxD = self.maxW, self.maxH, self.maxD

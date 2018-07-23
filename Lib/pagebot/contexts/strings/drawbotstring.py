@@ -106,7 +106,7 @@ class DrawBotString(BabelString):
         True
         >>> bs = DrawBotString('ABC', context)
         >>> bs, bs.s
-        (ABC, ABC)
+        (<DrawBotString "ABC">, ABC)
         >>> style = dict(font='Verdana', fontSize=pt(100))
         >>> bs = DrawBotString('ABC', context, style=style)
         >>> bs.size
@@ -410,23 +410,17 @@ class DrawBotString(BabelString):
         defines if the current width or height comes from the pixel image of em
         size.
 
+        >>> from pagebot.document import Document
+        >>> from pagebot.elements import newTextBox
         >>> from pagebot.contexts.drawbotcontext import DrawBotContext
         >>> from pagebot.fonttoolbox.objects.font import findFont
         >>> font = findFont('Roboto-Black')
         >>> context = DrawBotContext()
-        """
-
-        """
-        TODO: Get more docTests to work
         >>> bs = context.newString('ABC', style=dict(font=font.path, fontSize=pt(22)))
-        >>> bs
-        ABC
-        >>> bs = context.newString('ABC', style=dict(font=font.path, w=pt(100))
-        >>> int(round(bs.fontSize))
-        51
-        >>> bs = context.newString('ABC', style=dict(font=font, w=pt(100)) # Use the font instance instead of path.
-        >>> int(round(bs.fontSize))
-        51
+        >>> doc = Document(size=pt(500, 500), autoPages=1)
+        >>> page = doc[1]
+        >>> tb = newTextBox(bs, w=pt(200))
+        >>> doc.export('_export/TestDrawBotString.pdf')        
         """
         # Get the drawBotBuilder, no need to check, we already must be in context here.
         if t is None:
@@ -480,13 +474,12 @@ class DrawBotString(BabelString):
         # inheritColor: Don't set color, inherit the current setting for fill
         cFill = css('textFill', e, style, blackColor) # Default is blackColor, not noColor
 
-
         if cFill is not inheritColor:
-            print('context fill: %s' % cFill)
+            #print('context fill: %s' % cFill)
             assert isinstance(cFill, Color), ('DrawBotString.newString] Fill color "%s" is not Color in style %s' % (cFill, style))
             context.setTextFillColor(fs, cFill)
-            print('fs fill: ')
-            print(fs._fill)
+            #print('fs fill: ')
+            #print(fs._fill)
 
         # Color values for text stroke
         # Color: Stroke the text with this color instance
@@ -579,7 +572,7 @@ class DrawBotString(BabelString):
         if style is None:
             style = dict(fontSize=uFontSize)
 
-        newT = fs # + t # Format plain string t onto new formatted fs.
+        newT = fs + t # Format plain string t onto new formatted fs.
 
         isFitting = True
         if w is not None:
@@ -614,10 +607,10 @@ class DrawBotString(BabelString):
                 newS = cls.newString(t, context, style=style)
                 didFit = True
             else:
-                newS = cls(newT, context, style) # Cannot fit, answer untouched.
+                newS = cls(newT, context, style=style) # Cannot fit, answer untouched.
                 isFitting = False
         else:
-            newS = cls(newT, context, style)
+            newS = cls(newT, context, style=style)
 
         # Store any adjust fitting parameters in the string, in case the caller
         # wants to know.

@@ -65,11 +65,24 @@ def point3D(p=None):
     (30mm, 30mm, 0pt)
     >>> point3D(p(2,3,4,5)) # Trim tuple to 3 coordinates.
     (2p, 3p, 4p)
+    >>> point3D(23)
+    (23pt, 23pt, 23pt)
+    >>> point3D('3p4')
+    (3p4, 3p4, 3p4)
+    >>> point3D('abc') # Error renders to pt(0)
+    (0pt, 0pt, 0pt)
+    >>> point3D(pt(10,20))
+    (10pt, 20pt, 0pt)
     """
     if not p: # None or zero.
         return pt(0, 0, 0) # Undefined 3D point as list.
 
-    if isinstance(p, (list, tuple)):
+    if isinstance(p, (float, int, str)):
+        p = units(p)
+        if p is None:
+            p = pt(0)
+        p = p, p, p
+    elif isinstance(p, (list, tuple)):
         if len(p) > 3:
             p = p[:3]
         while len(p) < 3:
@@ -91,6 +104,8 @@ def point2D(p=None):
     (20pt, 20pt)
     >>> point2D(mm(2,3,4,5,6))
     (2mm, 3mm)
+    >>> point2D(mm(3))
+    (3mm, 3mm)
     """
     return point3D(p)[:2]
 
