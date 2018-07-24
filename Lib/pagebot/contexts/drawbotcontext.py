@@ -17,7 +17,7 @@
 import os
 from pagebot.contexts.basecontext import BaseContext
 from pagebot.style import LEFT, CENTER, RIGHT, DEFAULT_FRAME_DURATION
-from pagebot.toolbox.color import color, Color, noColor, inheritColor
+from pagebot.toolbox.color import Color, noColor, inheritColor
 from pagebot.toolbox.units import ru, isUnit, isUnits # Render units
 from pagebot.constants import *
 
@@ -49,7 +49,6 @@ if useDrawBot and useAppKit:
     drawBotBuilder = drawBot
     # Id to make builder hook name. Views will try to call e.build_html()
     drawBotBuilder.PB_ID = 'drawBot'
-    #print('Using DrawBotContext with DrawBot.')
 else:
     NSFont = None
     CTFontDescriptorCreateWithNameAndSize = None
@@ -62,7 +61,6 @@ else:
     # If DrawBot is not available on the platform, the noneDrawBotBuilder
     # instance is used to run DrawBot related docTests.
     drawBotBuilder = NoneDrawBotBuilder()
-    #print('Using DrawBotContext with a NoneDrawBotBuilder.')
 
 class DrawBotContext(BaseContext):
     """A DrawBotContext instance combines the specific functions of the DrawBot

@@ -1,17 +1,14 @@
-# -*- coding: UTF-8 -*-
 # -----------------------------------------------------------------------------
+#     Copyright (c) 2016+ Buro Petr van Blokland + Claudia Mens & Font Bureau
+#     www.pagebot.io
 #
 #     P A G E B O T
 #
-#     Copyright (c) 2016+ Buro Petr van Blokland + Claudia Mens & Font Bureau
-#     www.pagebot.io
 #     Licensed under MIT conditions
 #
 #     Supporting DrawBot, www.drawbot.com
 #     Supporting Flat, xxyxyz.org/flat
 # -----------------------------------------------------------------------------
-#     __init__.py
 #
-#     Special elements to show Variable Font info-graphics
+#     fontFormats.py
 #
-from pagebot.elements.variablefonts.variablecircle import VariableCircle
