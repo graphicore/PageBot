@@ -192,7 +192,8 @@ QUIRE_GUTTER = pt(40) # Default gutter between non-connecting pages.
 
 # Default initialize point as long as elements don't have a defined position.
 # Actual location depends on value of e.originTop flag.
-ORIGIN = (pt(0), pt(0), pt(0)) # Default origin if location is omitted.
+ORIGIN_X = ORIGIN_Y = ORIGIN_Z = pt(0)
+ORIGIN = (ORIGIN_X, ORIGIN_Y, ORIGIN_Z) # Default origin if location is omitted.
 
 # Min/max values for element sizes. Makes sure that elements dimensions for (w,h) never get 0
 XXXL = 2**32 # Arbitraty large size that is not system dependent, such as sys.maxsize is.

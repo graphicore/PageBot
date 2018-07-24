@@ -28,7 +28,8 @@ from pagebot.style import (makeStyle, getRootStyle, MIDDLE, CENTER, RIGHT, TOP, 
                            LEFT, FRONT, BACK, XALIGNS, YALIGNS, ZALIGNS,
                            MIN_WIDTH, MAX_WIDTH, MIN_HEIGHT, MAX_HEIGHT,
                            MIN_DEPTH, MAX_DEPTH, DEFAULT_WIDTH, DEFAULT_FONT_SIZE,
-                           DEFAULT_HEIGHT, DEFAULT_DEPTH, XXXL,
+                           ORIGIN_X, ORIGIN_Y, ORIGIN_Z,
+                           DEFAULT_LEADING, DEFAULT_HEIGHT, DEFAULT_DEPTH, XXXL,
                            INTERPOLATING_TIME_KEYS, ONLINE, INLINE,
                            OUTLINE)
 from pagebot.toolbox.transformer import asFormatted, uniqueID
@@ -834,7 +835,7 @@ class Element(object):
         base = dict(base=self.parentH, em=self.em) # In case relative units, use this as base for %
         return units(self.css('baselineGrid'), base=base, min=self.minH, max=self.maxH)
     def _set_baselineGrid(self, baselineGrid):
-        self.style['baselineGrid'] = units(baselineGrid)
+        self.style['baselineGrid'] = units(baselineGrid, default=DEFAULT_LEADING)
     baselineGrid = property(_get_baselineGrid, _set_baselineGrid)
 
     def _get_baselineGridStart(self):
@@ -853,7 +854,7 @@ class Element(object):
         base = dict(base=self.parentH, em=self.em) # In case relative units, use this as base for %
         return units(self.css('baselineGridStart'), base=base, min=self.minH, max=self.maxH)
     def _set_baselineGridStart(self, baselineGridStart):
-        self.style['baselineGridStart'] = units(baselineGridStart)
+        self.style['baselineGridStart'] = units(baselineGridStart, default=0)
     baselineGridStart = property(_get_baselineGridStart, _set_baselineGridStart)
 
     # Text conditions, always True for non-text elements.
@@ -1089,7 +1090,7 @@ class Element(object):
     # Orientation of elements (and pages)
 
     def isLeftPage(self, e=None):
-        """Normal elements don't know the left/right orientation of the page that they are on.
+        """Normal child elements don't know the left/right orientation of the page that they are on.
         Pass the request on to the parent, until a page is reachted.
 
         >>> from pagebot.document import Document
@@ -1102,13 +1103,15 @@ class Element(object):
         return False
 
     def isRightPage(self, e=None):
-        """Normal elements don't know the left/right orientation of the page that they are on.
+        """Normal child elements don't know the left/right orientation of the page that they are on.
         Pass the request on to the parent, until a page is reachted."""
         if self._isRightPage is not None:
             return self._isRightPage
         if self.parent is not None:
             return self.parent.isRightPage(self)
         return False
+
+    #   Grid stuff 
 
     def _get_gridX(self):
         """Answer the grid, depending on the left/right orientation of self.
@@ -1163,6 +1166,107 @@ class Element(object):
     def _set_gridZ(self, gridZ):
         self.style['gridZ'] = gridZ  # Save locally, blocking CSS parent scope for this param.
     gridZ = property(_get_gridZ, _set_gridZ)
+
+    #   Fixed column width, amount of columns varies
+
+    def _get_cw(self):
+        """Answer the fixed column width, if defined. Otherwise answer None.
+
+        >>> from pagebot.toolbox.units import mm
+        >>> e = Element(cw=pt(50))
+        >>> e.cw
+        50pt
+        >>> e.cw = mm(40)
+        >>> e.cw 
+        40mm
+        """
+        base = dict(base=self.parentW, em=self.em) # In case relative units, use this as base.
+        return units(self.css('cw'), base=base, min=self.minW, max=self.maxW)
+    def _set_cw(self, cw):
+        self.style['cw'] = units(cw, min=self.minW, max=self.maxW)
+    cw = property(_get_cw, _set_cw)
+
+    def _get_ch(self):
+        """Answer the fixed column row height, if defined. Otherwise answer None.
+
+        >>> from pagebot.toolbox.units import mm
+        >>> e = Element(ch=pt(50))
+        >>> e.ch
+        50pt
+        >>> e.ch = mm(40)
+        >>> e.ch 
+        40mm
+        """
+        base = dict(base=self.parentW, em=self.em) # In case relative units, use this as base.
+        return units(self.css('ch'), base=base, min=self.minW, max=self.maxW)
+    def _set_ch(self, ch):
+        self.style['ch'] = units(ch, min=self.minH, max=self.maxH)
+    ch = property(_get_ch, _set_ch)
+
+    def _get_cd(self):
+        """Answer the fixed column layer depth, if defined. Otherwise answer None.
+
+        >>> from pagebot.toolbox.units import mm
+        >>> e = Element(cd=pt(50))
+        >>> e.cd
+        50pt
+        >>> e.cd = mm(40)
+        >>> e.cd 
+        40mm
+        """
+        base = dict(base=self.parentW, em=self.em) # In case relative units, use this as base.
+        return units(self.css('cd'), base=base, min=self.minW, max=self.maxW)
+    def _set_cd(self, cd):
+        self.style['cd'] = units(cd, min=self.minD, max=self.maxD)
+    cd = property(_get_cd, _set_cd)
+
+ 
+    #   Fix column count, with of columsn varies
+
+    def _get_columnsX(self):
+        """Answer the amount columns inside page padded width.
+
+        >>> e = Element(columnsX=3)
+        >>> e.columnsX
+        3
+        >>> e.columnsX = 4
+        >>> e.columnsX
+        4
+        """
+        return self.css('columnsX', 2)
+    def _set_columnsX(self, columnsX):
+        self.style['columnsX'] = columnsX
+    columnsX = property(_get_columnsX, _set_columnsX)
+
+    def _get_columnsY(self):
+        """Answer the amount columns inside page padded height.
+
+        >>> e = Element(columnsY=1)
+        >>> e.columnsY
+        1
+        >>> e.columnsY = 4
+        >>> e.columnsY
+        4
+        """
+        return self.css('columnsY', 1)
+    def _set_columnsY(self, columnsY):
+        self.style['columnsY'] = columnsY
+    columnsY = property(_get_columnsY, _set_columnsY)
+
+    def _get_columnsZ(self):
+        """Answer the amount columns inside page padded depth.
+
+        >>> e = Element(columnsZ=1)
+        >>> e.columnsZ
+        1
+        >>> e.columnsZ = 2
+        >>> e.columnsZ
+        2
+        """
+        return self.css('columnsZ', 1)
+    def _set_columnsZ(self, columnsZ):
+        self.style['columnsZ'] = columnsZ
+    columnsZ = property(_get_columnsZ, _set_columnsZ)
 
     def getGridColumns(self):
         """Answer the constructed sequence of [(columnX, columnW), ...] in the block of the element.
@@ -1225,6 +1329,10 @@ class Element(object):
                     break
                 gridColumns.append((x, cw))
                 x += cw + gw # Next column start position.
+
+        elif self.columnsX:
+            pass
+
         return gridColumns
 
     def getGridRows(self):
@@ -1282,6 +1390,7 @@ class Element(object):
                     gutter = gh
                 gridRows.append((y, ch))
                 y += ch + gutter
+        
         elif self.ch: # If no grid defined, and there is a general grid height, then run the squence for ch + gh gutter
             ch = self.ch
             y = 0
@@ -1290,6 +1399,10 @@ class Element(object):
                     break
                 gridRows.append((y, ch))
                 y += ch + gh # Next column start position.
+        
+        elif self.columnsZ:
+            pass
+ 
         return gridRows
 
     # No getGrid in Z-direction for now.
@@ -1364,13 +1477,19 @@ class Element(object):
         Some situations require the rendered value, by in case of CSS, the relative value
         should be maintained. Then the current parent total reference is not important.
 
-        >>> from pagebot.toolbox.units import fr
+        >>> from pagebot.toolbox.units import fr, mm
         >>> e = Element(x=100, w=400)
         >>> e.x, e.y, e.z
         (100pt, 0pt, 0pt)
         >>> e.x = 200
         >>> e.x, e.y, e.z
         (200pt, 0pt, 0pt)
+        >>> e.x = mm(20) # Render from makve function
+        >>> e.x, e.y, e.z
+        (20mm, 0pt, 0pt)
+        >>> e.x = '20mm' # Render from a unit string.
+        >>> e.x, e.y, e.z
+        (20mm, 0pt, 0pt)
         >>> isUnit(e.x) # These are Unit instances, not hard values.
         True
         >>> child = Element(x='40%', parent=e)
@@ -1385,10 +1504,11 @@ class Element(object):
         """
         # Retrieve as Unit instance and adjust attributes to current settings.
         base = dict(base=self.parentW, em=self.em) # In case relative units, use this as base.
-        return units(self.style.get('x'), base=base)
+        return units(self.style.get('x', ORIGIN_X), base=base)
     def _set_x(self, x):
-        """Convert to units, if x is not already a Unit instance."""
-        self.style['x'] = units(x)
+        """Convert to units, if x is not already a Unit instance. If rendering gives an error,
+        then default to ORIGIN_X."""
+        self.style['x'] = units(x, ORIGIN_X)
     x = property(_get_x, _set_x)
 
     def _get_y(self):
@@ -1400,6 +1520,9 @@ class Element(object):
         >>> e.y = 200
         >>> e.x, e.y, e.z
         (0pt, 200pt, 0pt)
+        >>> e.y = '20mm' # Render from a unit string.
+        >>> e.x, e.y, e.z
+        (0pt, 20mm, 0pt)
         >>> child = Element(y='40%', parent=e)
         >>> child.y, child.y.pt # 40% of 400
         (40%, 160)
@@ -1409,10 +1532,11 @@ class Element(object):
         """
         # Retrieve as Unit instance and adjust attributes to current settings.
         base = dict(base=self.parentH, em=self.em) # In case relative units, use this as base.
-        return units(self.style.get('y'), base=base)
+        return units(self.style.get('y', ORIGIN_Y), base=base)
     def _set_y(self, y):
-        """Convert to units, if y is not already a Unit instance."""
-        self.style['y'] = units(y)
+        """Convert to units, if y is not already a Unit instance. If rendering gives an error,
+        then default to ORIGIN_Y."""
+        self.style['y'] = units(y, default=ORIGIN_Y)
     y = property(_get_y, _set_y)
 
     def _get_z(self):
@@ -1426,7 +1550,7 @@ class Element(object):
         >>> e.z = 200 # Auto conversion to point units.
         >>> e.x, e.y, e.z
         (0pt, 0pt, 200pt)
-        >>> e.z = '20mm'
+        >>> e.z = '20mm' # Render from a unit string.
         >>> e.x, e.y, e.z
         (0pt, 0pt, 20mm)
         >>> e.size3D
@@ -1440,10 +1564,11 @@ class Element(object):
         """
         # Retrieve as Unit instance and adjust attributes to current settings.
         base = dict(base=self.parentD, em=self.em) # In case relative units, use this as base.
-        return units(self.style.get('z'), base=base)
+        return units(self.style.get('z', ORIGIN_Z), base=base)
     def _set_z(self, z):
-        """Convert to units, if z is not already a Unit instance."""
-        self.style['z'] = units(z)
+        """Convert to units, if z is not already a Unit instance. If rendering gives an error,
+        then default to ORIGIN_Z."""
+        self.style['z'] = units(z, default=ORIGIN_Z)
     z = property(_get_z, _set_z)
 
     def _get_xy(self):
@@ -1603,7 +1728,7 @@ class Element(object):
     def _get_mLeft(self): # Left, including left margin
         return self.left - self.css('ml')
     def _set_mLeft(self, x):
-        self.left = x + self.css('ml')
+        self.left = units(x, default=ORIGIN_X) + self.css('ml')
     mLeft = property(_get_mLeft, _set_mLeft)
 
     def _get_center(self):
@@ -1630,11 +1755,12 @@ class Element(object):
             return self.x - self.w/2
         return self.x
     def _set_center(self, x):
+        x = units(x, default=ORIGIN_X)
         xAlign = self.xAlign
         if xAlign == LEFT:
-            self.x = units(x) - self.w/2
+            self.x = x - self.w/2
         elif xAlign == RIGHT:
-            self.x = units(x) + self.w/2
+            self.x = x + self.w/2
         else:
             self.x = x
     center = property(_get_center, _set_center)
@@ -1670,6 +1796,7 @@ class Element(object):
             return self.x + self.w/2
         return self.x
     def _set_right(self, x):
+        x = units(x, default=ORIGIN_X)
         xAlign = self.xAlign
         if xAlign == LEFT:
             self.x = x - self.w # Creates a unit, even wht x is a number.
@@ -1694,7 +1821,7 @@ class Element(object):
         """
         return self.right + self.mr
     def _set_mRight(self, x):
-        self.right = x + self.mr
+        self.right = units(x, default=ORIGIN_X) + self.mr
     mRight = property(_get_mRight, _set_mRight)
 
     # Vertical
@@ -1722,6 +1849,7 @@ class Element(object):
         return self.y
     def _set_top(self, y):
         """Shift the element so self.top == y."""
+        y = units(y, default=ORIGIN_Y)
         yAlign = self.yAlign
         if yAlign == MIDDLE:
             self.y = y + self.h/2
@@ -1739,6 +1867,7 @@ class Element(object):
             return self.top - self.mt
         return self.top + self.mt
     def _set_mTop(self, y):
+        y = units(y, default=ORIGIN_Y)
         if self.originTop:
             self.top = y + self.mt
         else:
@@ -1769,6 +1898,7 @@ class Element(object):
             return self.y + self.h/2
         return self.y
     def _set_middle(self, y):
+        y = units(y, default=ORIGIN_Y)
         yAlign = self.yAlign
         if yAlign == TOP:
             if self.originTop:
@@ -1806,6 +1936,7 @@ class Element(object):
             return self.y + self.h/2
         return self.y
     def _set_bottom(self, y):
+        y = units(y, default=ORIGIN_Y)
         yAlign = self.yAlign
         if yAlign == TOP:
             if self.originTop:
@@ -1823,6 +1954,7 @@ class Element(object):
             return self.bottom + self.mb
         return self.bottom - self.mb
     def _set_mBottom(self, y):
+        y = units(y, default=ORIGIN_Y)
         if self.originTop:
             self.bottom = y - self.mb
         else:
@@ -1840,6 +1972,7 @@ class Element(object):
             return self.z - self.d
         return self.z
     def _set_front(self, z):
+        z = units(z, default=ORIGIN_Z)
         zAlign = self.css('zAlign')
         if zAlign == MIDDLE:
             self.z = z + self.d/2
@@ -1852,7 +1985,7 @@ class Element(object):
     def _get_mFront(self): # Front, including front margin
         return self.front + self.css('mzf')
     def _set_mFront(self, z):
-        self.front = z + self.css('mzf')
+        self.front = units(z, default=ORIGIN_Z) + self.css('mzf')
     mFront = property(_get_mFront, _set_mFront)
 
     def _get_back(self):
@@ -1863,6 +1996,7 @@ class Element(object):
             return self.z + self.d
         return self.z
     def _set_back(self, z):
+        z = units(z, default=ORIGIN_Z)
         zAlign = self.css('zAlign')
         if zAlign == MIDDLE:
             self.z = z - self.d/2
@@ -1875,8 +2009,8 @@ class Element(object):
     def _get_mBack(self): # Front, including front margin
         return self.back - self.css('mzb')
     def _set_mBack(self, z):
-        self.back = z - self.css('mzb')
-    mBack = property(_get_mBack, _set_mBack)
+        self.back = units(z, default=ORIGIN_Z) - self.css('mzb')
+        mBack = property(_get_mBack, _set_mBack)
 
     # Borders
 
@@ -2073,9 +2207,9 @@ class Element(object):
         (22pt, 22pt, 22pt, 22pt)
         >>> e.bleed = mm(3)
         >>> e.style['bleedTop']
-        ####@@@
+        3mm
         >>> e.bleed
-        (22mm, 22mm, 22mm, 22mm)
+        (3mm, 3mm, 3mm, 3mm)
         >>>
         """
         return self.bleedTop, self.bleedRight, self.bleedBottom, self.bleedLeft
@@ -2102,12 +2236,12 @@ class Element(object):
         >>> e.bleed = 6
         >>> e.bleedTop = mm(5)
         >>> e.bleed
-        (24pt, 6pt, 6pt, 6pt)
+        (5mm, 6pt, 6pt, 6pt)
         """
         base = dict(base=self.h, em=self.em) # In case relative units, use this as base.
         return units(self.css('bleedTop', 0), base=base, min=0)
     def _set_bleedTop(self, bleed):
-        self.style['bleedTop'] = units(bleed, 0)
+        self.style['bleedTop'] = units(bleed, default=0)
     bleedTop = property(_get_bleedTop, _set_bleedTop)
 
     def _get_bleedBottom(self):
@@ -2116,19 +2250,17 @@ class Element(object):
 
         >>> from pagebot.toolbox.units import mm
         >>> e = Element(bleedBottom=20)
-        >>> units(mm(5), 0)
-
         >>> e.bleedBottom
         20pt
         >>> e.bleed = 6
         >>> e.bleedBottom = mm(5)
         >>> e.bleed
-        (6pt, 6pt, 24pt, 6pt)
+        (6pt, 6pt, 5mm, 6pt)
         """
         base = dict(base=self.h, em=self.em) # In case relative units, use this as base.
         return units(self.css('bleedBottom', 0), base=base, min=0)
     def _set_bleedBottom(self, bleed):
-        self.style['bleedBottom'] = units(bleed, 0)
+        self.style['bleedBottom'] = units(bleed, default=0)
     bleedBottom = property(_get_bleedBottom, _set_bleedBottom)
 
     def _get_bleedLeft(self):
@@ -2142,12 +2274,12 @@ class Element(object):
         >>> e.bleed = 6
         >>> e.bleedLeft = mm(5)
         >>> e.bleed
-        (6pt, 6pt, 6pt, 24pt)
+        (6pt, 6pt, 6pt, 5mm)
         """
         base = dict(base=self.w, em=self.em) # In case relative units, use this as base.
         return units(self.css('bleedLeft', 0), base=base, min=0)
     def _set_bleedLeft(self, bleed):
-        self.style['bleedLeft'] = units(bleed, 0)
+        self.style['bleedLeft'] = units(bleed, default=0)
     bleedLeft = property(_get_bleedLeft, _set_bleedLeft)
 
     def _get_bleedRight(self):
@@ -2158,15 +2290,15 @@ class Element(object):
         >>> e = Element(bleedRight=20)
         >>> e.bleedRight
         20pt
-        >>> e.bleed = 21
+        >>> e.bleed = 7
         >>> e.bleedRight = mm(5)
         >>> e.bleed
-        (21pt, 24pt, 21pt, 21pt)
+        (7pt, 5mm, 7pt, 7pt)
         """
         base = dict(base=self.w, em=self.em) # In case relative units, use this as base.
         return units(self.css('bleedRight', 0), base=base, min=0)
     def _set_bleedRight(self, bleed):
-        self.style['bleedRight'] = units(bleed, 0)
+        self.style['bleedRight'] = units(bleed, default=0)
     bleedRight = property(_get_bleedRight, _set_bleedRight)
 
     def _get_bleedW(self):
@@ -2177,7 +2309,7 @@ class Element(object):
         >>> e.bleedW
         102p
         >>> e.w, e.bleedLeft, e.bleedRight
-        (100p, 12pt, 12pt)
+        (100p, 1p, 1p)
         """
         return self.w + self.bleedLeft + self.bleedRight
     bleedW = property(_get_bleedW)
@@ -2190,7 +2322,7 @@ class Element(object):
         >>> e.bleedH
         103p
         >>> e.h, e.bleedTop, e.bleedBottom
-        (100p, 18pt, 18pt)
+        (100p, 1p6, 1p6)
         """
         return self.h + self.bleedTop + self.bleedBottom
     bleedH = property(_get_bleedH)
@@ -2286,9 +2418,9 @@ class Element(object):
         (4.5em, 45)
         """
         base = dict(base=self.parentW, em=self.em) # In case relative units, use this as base.
-        return units(self.css('w'), base=base, min=self.minW, max=self.maxW)
+        return units(self.css('w', DEFAULT_WIDTH), base=base, min=self.minW, max=self.maxW)
     def _set_w(self, w):
-        self.style['w'] = units(w or DEFAULT_WIDTH, min=self.minW, max=self.maxW)
+        self.style['w'] = units(w, default=DEFAULT_WIDTH, min=self.minW, max=self.maxW)
     w = property(_get_w, _set_w)
 
     def _get_mw(self): # Width, including margins
@@ -2324,18 +2456,18 @@ class Element(object):
         >>> child = Element(h='20%', parent=e)
         >>> child.h
         20%
-        >>> child.h = '0.5fr'
+        >>> child.h = '5fr'
         >>> child.h
-        0.5fr
+        5fr
         >>> e.style['fontSize'] = 12
         >>> child.h = '4.5em' # Multiplication with current e.style['fontSize']
         >>> child.h, child.h.pt
         (4.5em, 54)
         """
         base = dict(base=self.parentH, em=self.em) # In case relative units, use this as base.
-        return units(self.css('h', 0), base=base, min=self.minH, max=self.maxH)
+        return units(self.css('h', DEFAULT_HEIGHT), base=base, min=self.minH, max=self.maxH)
     def _set_h(self, h):
-        self.style['h'] = units(h or DEFAULT_HEIGHT, min=self.minH, max=self.maxH) # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['h'] = units(h, default=DEFAULT_HEIGHT, min=self.minH, max=self.maxH) # Overwrite element local style from here, parent css becomes inaccessable.
     h = property(_get_h, _set_h)
 
     def _get_mh(self): # Height, including margins
@@ -2369,16 +2501,16 @@ class Element(object):
         >>> e.d # Show clipped to e.minD
         200pt
         >>> e.d = 80000
-        >>> e.d, e.d.pt # Clipping on pt conversion
-        (2000pt, 2000)
+        >>> e.d, e.d.pt, p(e.d), e.d.p # Clipping on pt conversion
+        (2000pt, 2000, 2000)
         >>> e.d = 0 # Imaginary negative thickness
         >>> e.d, e.d = e.minD, e.d == MIN_DEPTH # Corrected by e.minD
         (10pt, True, False)
         """
         base = dict(base=self.parentD, em=self.em) # In case relative units, use this as base.
-        return units(self.css('d', 0), base=base, min=self.minD, max=self.maxD)
+        return units(self.css('d', DEFAULT_DEPTH), base=base, min=self.minD, max=self.maxD)
     def _set_d(self, d):
-        self.style['d'] = units(d or DEFAULT_DEPTH, min=self.minD, max=self.maxD) # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['d'] = units(d, default=DEFAULT_DEPTH, min=self.minD, max=self.maxD) # Overwrite element local style from here, parent css becomes inaccessable.
     d = property(_get_d, _set_d)
 
     def _get_md(self): # Depth, including margin front and margin back in z-axis.
@@ -2521,7 +2653,7 @@ class Element(object):
         base = dict(base=self.h, em=self.em) # In case relative units, use this as base.
         return units(self.css('mt', 0), base=base, min=0)
     def _set_mt(self, mt):
-        self.style['mt'] = units(mt or 0)  # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['mt'] = units(mt, default=0)  # Overwrite element local style from here, parent css becomes inaccessable.
     mt = property(_get_mt, _set_mt)
 
     def _get_mb(self): # Margin bottom
@@ -2548,7 +2680,7 @@ class Element(object):
         return units(self.css('mb', 0), base=base, min=0)
     def _set_mb(self, mb):
         """Precompile as Unit instance from whatever format mb has."""
-        self.style['mb'] = units(mb) # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['mb'] = units(mb, default=0) # Overwrite element local style from here, parent css becomes inaccessable.
     mb = property(_get_mb, _set_mb)
 
     def _get_ml(self): # Margin left
@@ -2573,7 +2705,7 @@ class Element(object):
         return units(self.css('ml', 0), base=base, min=0)
     def _set_ml(self, ml):
         # Overwrite element local style from here, parent css becomes inaccessable.
-        self.style['ml'] = units(ml)
+        self.style['ml'] = units(ml, default=0)
     ml = property(_get_ml, _set_ml)
 
     def _get_mr(self): # Margin right
@@ -2597,7 +2729,7 @@ class Element(object):
         base = dict(base=self.w, em=self.em) # In case relative units, use this as base.
         return units(self.css('mr', 0), base=base, min=0)
     def _set_mr(self, mr):
-        self.style['mr'] = units(mr) # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['mr'] = units(mr, default=0) # Overwrite element local style from here, parent css becomes inaccessable.
     mr = property(_get_mr, _set_mr)
 
     def _get_mzf(self): # Margin z-axis front
@@ -2621,7 +2753,7 @@ class Element(object):
         base = dict(base=self.d, em=self.em) # In case relative units, use this as base.
         return units(self.css('mzf', 0), base=base, min=0)
     def _set_mzf(self, mzf):
-        self.style['mzf'] = units(mzf or 0) # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['mzf'] = units(mzf, default=0) # Overwrite element local style from here, parent css becomes inaccessable.
     mzf = property(_get_mzf, _set_mzf)
 
     def _get_mzb(self): # Margin z-axis back
@@ -2645,7 +2777,7 @@ class Element(object):
         base = dict(base=self.d, em=self.em) # In case relative units, use this as base.
         return units(self.css('mzb', 0), base=base, min=0)
     def _set_mzb(self, mzb):
-        self.style['mzb'] = units(mzb)  # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['mzb'] = units(mzb, default=0)  # Overwrite element local style from here, parent css becomes inaccessable.
     mzb = property(_get_mzb, _set_mzb)
 
     # Padding properties
@@ -2771,7 +2903,7 @@ class Element(object):
         base = dict(base=self.h, em=self.em) # In case relative units, use this as base.
         return units(self.css('pt', 0), base=base, min=0, max=self.h)
     def _set_pt(self, pt):
-        self.style['pt'] = units(pt or 0)  # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['pt'] = units(pt, default=0)  # Overwrite element local style from here, parent css becomes inaccessable.
     pt = property(_get_pt, _set_pt)
 
     def _get_pb(self): # Padding bottom
@@ -2802,7 +2934,7 @@ class Element(object):
         base = dict(base=self.h, em=self.em) # In case relative units, use this as base.
         return units(self.css('pb', 0), base=base, min=0, max=self.maxH)
     def _set_pb(self, pb):
-        self.style['pb'] = units(pb or 0) # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['pb'] = units(pb, default=0) # Overwrite element local style from here, parent css becomes inaccessable.
     pb = property(_get_pb, _set_pb)
 
     def _get_pl(self):
@@ -2828,7 +2960,7 @@ class Element(object):
         base = dict(base=self.w, em=self.em) # In case relative units, use this as base.
         return units(self.css('pl', 0), base=base, min=0, max=self.maxW)
     def _set_pl(self, pl):
-        self.style['pl'] = units(pl or 0) # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['pl'] = units(pl, default=0) # Overwrite element local style from here, parent css becomes inaccessable.
     pl = property(_get_pl, _set_pl)
 
     def _get_pr(self): # Margin right
@@ -2860,7 +2992,7 @@ class Element(object):
         base = dict(base=self.w, em=self.em) # In case relative units, use this as base.
         return units(self.css('pr', 0), base=base, min=0, max=self.maxW)
     def _set_pr(self, pr):
-        self.style['pr'] = units(pr or 0)
+        self.style['pr'] = units(pr, default=0)
     pr = property(_get_pr, _set_pr)
 
     def _get_pzf(self):
@@ -2888,7 +3020,7 @@ class Element(object):
         base = dict(base=self.d, em=self.em) # In case relative units, use this as base.
         return units(self.css('pzf', 0), base=base, min=0, max=self.maxD)
     def _set_pzf(self, pzf): # padding z-axis front
-        self.style['pzf'] = units(pzf or 0) # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['pzf'] = units(pzf, default=0) # Overwrite element local style from here, parent css becomes inaccessable.
     pzf = property(_get_pzf, _set_pzf)
 
     def _get_pzb(self):
@@ -2918,7 +3050,7 @@ class Element(object):
         base = dict(base=self.d, em=self.em) # In case relative units, use this as base.
         return units(self.css('pzb', 0), base=base, min=0, max=self.maxD)
     def _set_pzb(self, pzb):
-        self.style['pzb'] = units(pzb or 0) # Overwrite element local style from here, parent css becomes inaccessable.
+        self.style['pzb'] = units(pzb, default=0) # Overwrite element local style from here, parent css becomes inaccessable.
     pzb = property(_get_pzb, _set_pzb)
 
     def _get_pw(self):
@@ -3176,7 +3308,7 @@ class Element(object):
         (100pt, 110pt)
         >>> e = Element(elements=[e1, e2, e3])
         >>> e1.left, e1.right
-        (10pt, 110pt)
+        (10pt, 10pt)
         >>> e.block3D
         (10pt, 12pt, 14pt, 0, 0, 0)
         """
@@ -3310,7 +3442,7 @@ class Element(object):
         """
         return units(self.css('minW', MIN_WIDTH))
     def _set_minW(self, minW):
-        self.style['minW'] = u = units(minW) # Set on local style, shielding parent self.css value.
+        self.style['minW'] = u = units(minW, default=MIN_WIDTH) # Set on local style, shielding parent self.css value.
         assert u.isAbsolute, ('Element.minW "%s" must be an absolute unit.' % minW)
     minW = property(_get_minW, _set_minW)
 
@@ -3328,7 +3460,7 @@ class Element(object):
         """
         return units(self.css('minH', MIN_HEIGHT))
     def _set_minH(self, minH):
-        self.style['minH'] = u = units(minH) # Set on local style, shielding parent self.css value.
+        self.style['minH'] = u = units(minH, default=MIN_HEIGHT) # Set on local style, shielding parent self.css value.
         assert u.isAbsolute, ('Element.minH "%s" must be an absolute unit.' % minH)
     minH = property(_get_minH, _set_minH)
 
@@ -3346,7 +3478,7 @@ class Element(object):
         """
         return units(self.css('minD', MIN_DEPTH))
     def _set_minD(self, minD):
-        self.style['minD'] = u = units(minD) # Set on local style, shielding parent self.css value.
+        self.style['minD'] = u = units(minD, default=MIN_DEPTH) # Set on local style, shielding parent self.css value.
         assert u.isAbsolute, ('Element.minD "%s" must be an absolute unit.' % minD)
     minD = property(_get_minD, _set_minD)
 
@@ -3408,7 +3540,7 @@ class Element(object):
         """
         return units(self.css('maxW', MAX_WIDTH))
     def _set_maxW(self, maxW):
-        self.style['maxW'] = u = units(maxW) # Set on local style, shielding parent self.css value.
+        self.style['maxW'] = u = units(maxW, default=MAX_WIDTH) # Set on local style, shielding parent self.css value.
         assert u.isAbsolute, ('Element.maxW "%s" must be an absolute unit.' % maxW)
     maxW = property(_get_maxW, _set_maxW)
 
@@ -3426,7 +3558,7 @@ class Element(object):
         """
         return units(self.css('maxH', MAX_HEIGHT))
     def _set_maxH(self, maxH):
-        self.style['maxH'] = u = units(maxH) # Set on local style, shielding parent self.css value.
+        self.style['maxH'] = u = units(maxH, default=MAX_HEIGHT) # Set on local style, shielding parent self.css value.
         assert u.isAbsolute, ('Element.maxH "%s" must be an absolute unit.' % maxH)
     maxH = property(_get_maxH, _set_maxH)
 
@@ -3444,7 +3576,7 @@ class Element(object):
         """
         return units(self.css('maxD', MAX_DEPTH))
     def _set_maxD(self, maxD):
-        self.style['maxD'] = u = units(maxD) # Set on local style, shielding parent self.css value.
+        self.style['maxD'] = u = units(maxD, default=MAX_DEPTH) # Set on local style, shielding parent self.css value.
         assert u.isAbsolute, ('Element.maxD "%s" must be an absolute unit.' % maxD)
     maxD = property(_get_maxD, _set_maxD)
 

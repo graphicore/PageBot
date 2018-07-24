@@ -1774,7 +1774,7 @@ def value2Maker(v):
     elif v in MAKERS:
         maker = v
     elif isUnit(v):
-        maker = UNIT_MAKERS[V.UNIT]
+        maker = UNIT_MAKERS[v.UNIT]
     elif isinstance(v, str):
         v = v.lower()
         if v in UNIT_MAKERS:
